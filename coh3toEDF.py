@@ -13,7 +13,7 @@ CONFIG_FILE = os.path.join(SCRIPT_PATH, CONFIG_FILE)
 EXECUTABLE_PATH = json.load(open(CONFIG_FILE))['path_to_executable']
 
 
-def list_files(path:str):
+def list_files(path: str):
     """List all the files in a folder and subfolders.
 
     Args:
@@ -25,8 +25,8 @@ def list_files(path:str):
 
     for folder, _, files in os.walk(path):
         for file_ in files:
-                files_list.add(os.path.join(folder, file_))
-    
+            files_list.add(os.path.join(folder, file_))
+
     return list(files_list)
 
 
@@ -36,16 +36,16 @@ def ensure_path(path: str):
 
 
 def convert_coh3_to_EDF(
-    eeg_path:str,
-    edf_path:str = None,
-    executable_path:str = EXECUTABLE_PATH,
+    eeg_path: str,
+    edf_path: str = None,
+    executable_path: str = EXECUTABLE_PATH,
 ):
     """ Convert Coherence 3 (.eeg) to EDF file format.
 
     Args:
         eeg_path: path to the eeg file to convert.
-        edf_path: 
-        executable_path: 
+        edf_path: path to the converted EDF file.
+        executable_path: path to the converter executable.
     """
     if edf_path is None:
         edf_path = eeg_path[:-4] + '.EDF'
@@ -73,7 +73,7 @@ def convert_coh3_to_EDF(
         ).set_text(edf_path)
 
         # Indicate where to save the file
-        app.Destination.Button1.click()  
+        app.Destination.Button1.click()
 
         # If the file already exist overwrite it.
         if overwrite_edf:
@@ -92,7 +92,7 @@ def convert_coh3_to_EDF(
     ):
         import traceback
         traceback.print_exc()
-        
+
         # Only use one instance at a time
         os.system(
             "taskkill /f /im {0}".format(
@@ -111,9 +111,9 @@ def convert_coh3_to_EDF(
 
 
 def main(
-    path_to_executable:str,
-    original_path:str,
-    destination_path:str = None,
+    path_to_executable: str,
+    original_path: str,
+    destination_path: str = None,
     overwrite: bool = False,
 ):
     """ Run batch conversion process.

@@ -1,7 +1,8 @@
 r""" The aim of this script is to anonymise every .eeg in a tree of folders.
 
 Usage:
-    .\python-3.8.8-embed-win32\python.exe .\anonymiser.py .\dataset -dp .\dataset_anonym -y
+    .\python-3.8.8-embed-win32\python.exe .\anonymiser.py \
+    .\dataset -dp .\dataset_anonym -y
 """
 import os
 import shutil
@@ -9,7 +10,7 @@ import sys
 import traceback
 
 
-def list_files(path:str):
+def list_files(path: str):
     """List all the files in a folder and subfolders.
 
     Args:
@@ -21,8 +22,8 @@ def list_files(path:str):
 
     for folder, _, files in os.walk(path):
         for file_ in files:
-                files_list.add(os.path.join(folder, file_))
-    
+            files_list.add(os.path.join(folder, file_))
+
     return list(files_list)
 
 
@@ -31,9 +32,9 @@ def ensure_path(path: str):
         os.makedirs(path)
 
 
-def extract_header(filename:str):
+def extract_header(filename: str):
     header = []
-    
+
     with open(filename, 'rb') as f:
         for line in f:
             header.extend(line)
@@ -46,11 +47,11 @@ def extract_header(filename:str):
                 return header
 
 
-def display_fields(filename:str):
+def display_fields(filename: str):
     fields = b''.join(extract_header(filename))
 
     print(
-        'Name: "', 
+        'Name: "',
         fields[314:364].decode('ascii', errors='ignore'),
         '"',
         sep='',
@@ -100,27 +101,27 @@ def display_fields(filename:str):
 
 
 def change_field(
-    array, start:int, stop:int, content:list, filler:bytes=b'\x00'
+    array, start: int, stop: int, content: list, filler: bytes = b'\x00'
 ):
     for index in range(start, stop):
         if index - start < len(content):
             array[index] = content[index - start]
         else:
             array[index] = filler
-    
+
     return stop - start >= len(content)
 
 
 def anonymise_eeg(
-    original_file:str,
-    destination_file:str,
-    field_name:str='',
-    field_surname:str='',
-    field_birthdate:str='',
-    field_sex:str='',
-    field_folder:str='',
-    field_centre:str='',
-    field_comment:str='',
+    original_file: str,
+    destination_file: str,
+    field_name: str = '',
+    field_surname: str = '',
+    field_birthdate: str = '',
+    field_sex: str = '',
+    field_folder: str = '',
+    field_centre: str = '',
+    field_comment: str = '',
     verbose=False,
 ):
     """Anonymaze an .eeg file.
@@ -178,7 +179,7 @@ def anonymise_eeg(
         pass
     else:
         change_field(content, 425, 464, field_centre.encode('ascii'))
- 
+
     if field_comment is None:
         pass
     else:
@@ -186,12 +187,14 @@ def anonymise_eeg(
 
     ensure_path(path=os.path.dirname(destination_file))
 
-    content = (char if isinstance(char, bytes) else bytes([char]) for char in content)
-    
+    content = (
+        char if isinstance(char, bytes) else bytes([char]) for char in content
+    )
+
     if not os.path.isfile(destination_file):
         shutil.copyfile(original_file, destination_file + '.part')
         os.rename(destination_file + '.part', destination_file)
-    
+
     with open(destination_file, 'rb+') as f:
         f.seek(0)
 
@@ -200,11 +203,11 @@ def anonymise_eeg(
 
     if verbose:
         display_fields(destination_file)
-        
+
     return True
 
 
-def main(path:str, destination_path:str, use_folder_as_name:bool=True):
+def main(path: str, destination_path: str, use_folder_as_name: bool = True):
     """Main process.
 
     Args:
@@ -217,7 +220,10 @@ def main(path:str, destination_path:str, use_folder_as_name:bool=True):
     files_in_dataset = [
         eeg for eeg in list_files(path) if eeg.lower().endswith('.eeg')
     ]
-    folder_name = lambda path : os.path.basename(os.path.dirname(path))
+
+    def folder_name(path):
+        return os.path.basename(os.path.dirname(path))
+
     number_of_files = len(files_in_dataset)
 
     for file_index, file_ in enumerate(sorted(files_in_dataset), start=1):
@@ -242,17 +248,20 @@ def main(path:str, destination_path:str, use_folder_as_name:bool=True):
             '-->',
             file_path,
         )
-        
+
         try:
-            anonymise_eeg(file_, file_path, field_name=field_name, verbose=True)
+            anonymise_eeg(
+                file_, file_path, field_name=field_name, verbose=True
+            )
         except MemoryError:
             print('MemoryError: retry...')
             try:
-                anonymise_eeg(file_, file_path, field_name=field_name, verbose=True)
+                anonymise_eeg(
+                    file_, file_path, field_name=field_name, verbose=True
+                )
             except MemoryError:
                 print('MemoryError: not able to process the file')
                 traceback.print_exc()
-                    
 
 
 if __name__ == '__main__':
@@ -333,7 +342,6 @@ if __name__ == '__main__':
                 sys.exit()
     else:
         sys.exit()
-
 
     main(
         path=args.path,
