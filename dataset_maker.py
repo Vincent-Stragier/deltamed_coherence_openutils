@@ -16,7 +16,9 @@ import sys
 
 import pandas as pd
 
+SCRIPT_PATH = os.path.dirname(__file__)
 CONFIG_FILE = 'dataset_maker.config'
+CONFIG_FILE = os.path.join(SCRIPT_PATH, CONFIG_FILE)
 
 
 def list_files(path:str):

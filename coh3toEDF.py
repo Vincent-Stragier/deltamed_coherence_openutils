@@ -7,8 +7,9 @@ import time
 import pywinauto
 from pywinauto.application import Application
 
-
+SCRIPT_PATH = os.path.dirname(__file__)
 CONFIG_FILE = 'coh3toEDF.config'
+CONFIG_FILE = os.path.join(SCRIPT_PATH, CONFIG_FILE)
 EXECUTABLE_PATH = json.load(open(CONFIG_FILE))['path_to_executable']
 
 
