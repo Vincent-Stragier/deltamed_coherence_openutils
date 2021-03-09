@@ -1,6 +1,7 @@
 # comtypes==1.1.7 pywinauto pywin32==224
 import json
 import os
+import sys
 import time
 
 import pywinauto
@@ -26,6 +27,11 @@ def list_files(path:str):
                 files_list.add(os.path.join(folder, file_))
     
     return list(files_list)
+
+
+def ensure_path(path: str):
+    if not os.path.isdir(path):
+        os.makedirs(path)
 
 
 def convert_coh3_to_EDF(
@@ -150,12 +156,103 @@ def main(
 
 
 if __name__ == '__main__':
-    # Load config information
-    configs = json.load(open(CONFIG_FILE))
+    import argparse
 
-    # List all the files contained in the sources
-    path_to_executable = configs['path_to_executable']
+    parser = argparse.ArgumentParser(allow_abbrev=True)
 
-    original_path = 'F:/dataset/'
-    destination_path = 'F:/dataset/'
-    main(path_to_executable, original_path, destination_path, overwrite=False)
+    parser.add_argument(
+        'path',
+        type=str,
+        help='path to the dataset to convert from coh3 (.eeg) to EDF',
+    )
+
+    parser.add_argument(
+        '-dp',
+        '--destination_path',
+        type=str,
+        help=(
+            'destination of the converted (.edf) files'
+        ),
+        default=None,
+    )
+
+    parser.add_argument(
+        '-ep',
+        '--executable_path',
+        type=str,
+        help=(
+            'path to the converter executable'
+        ),
+        default=None,
+    )
+
+    parser.add_argument(
+        '-o',
+        '--overwrite',
+        help='if set, the program will overwrite the existing .edf files',
+        action='store_true',
+        default=False,
+    )
+
+    # By default ask to the user if a want to proceed.
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        '-y',
+        '--yes',
+        help='if set, the program will start directly',
+        action='store_true',
+        default=False,
+    )
+
+    group.add_argument(
+        '-n',
+        '--no',
+        help='if set, the program will exit directly',
+        action='store_true',
+        default=False,
+    )
+
+    args = parser.parse_args()
+
+    print('The following arguments have been parsed:')
+    for k, v in vars(args).items():
+        print('{0}: {1}'.format(k, v))
+
+    if not args.no:
+        print()
+        if not args.yes:
+            try:
+                while True:
+                    conti = input('Do you want to run the program (yes/no)? ')
+                    if conti.lower() in ('y', 'yes'):
+                        break
+
+                    elif conti.lower() in ('n', 'no'):
+                        sys.exit()
+
+            except KeyboardInterrupt:
+                print(
+                    '\nThe user requested the end of the program'
+                    ' (KeyboardInterrupt).',
+                )
+
+                sys.exit()
+    else:
+        sys.exit()
+
+    if args.executable_path is None:
+        # Load config information
+        configs = json.load(open(CONFIG_FILE))
+
+        # List all the files contained in the sources
+        path_to_executable = configs['path_to_executable']
+    else:
+        path_to_executable = args.executable_path
+
+    main(
+        path_to_executable,
+        args.path,
+        args.destination_path if args.destination_path is not None
+        else args.path,
+        overwrite=args.overwrite,
+    )

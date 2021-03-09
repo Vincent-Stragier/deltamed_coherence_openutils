@@ -11,6 +11,7 @@ and transfered to a destination path.
 import json
 import multiprocessing as mp
 import os
+import shutil
 import sys
 
 import pandas as pd
@@ -40,60 +41,72 @@ def ensure_path(path: str):
         os.makedirs(path)
 
 
-def display_fields(filename:str):
+def extract_header(filename:str):
+    header = []
+    
     with open(filename, 'rb') as f:
         for line in f:
-            fields = line
+            header.extend(line)
+            if len(header) > 719:
+                header = [
+                    char if isinstance(char, bytes) else bytes([char])
+                    for char in header
+                ]
 
-            print(
-                'Name: "', 
-                fields[314:364].decode('ascii', errors='ignore'),
-                '"',
-                sep='',
-            )  # 50 characters (Name)
+                return header
 
-            print(
-                'Surname: "',
-                fields[364:394].decode('ascii', errors='ignore'),
-                '"',
-                sep='',
-            )  # 30 characters (Surname)
 
-            print(
-                'Date: "',
-                fields[394:404].decode('ascii', errors='ignore'),
-                '"',
-                sep='',
-            )  # 10 characters (Date)
+def display_fields(filename:str):
+    fields = b''.join(extract_header(filename))
 
-            print(
-                'Sex: "',
-                fields[404:405].decode('ascii', errors='ignore'),
-                '"',
-                sep='',
-            )  # 1 charaters (Sex)
+    print(
+        'Name: "', 
+        fields[314:364].decode('ascii', errors='ignore'),
+        '"',
+        sep='',
+    )  # 50 characters (Name)
 
-            print(
-                'Folder: "',
-                fields[405:425].decode('ascii', errors='ignore'),
-                '"',
-                sep='',
-            )  # 20 charaters (Folder)
+    print(
+        'Surname: "',
+        fields[364:394].decode('ascii', errors='ignore'),
+        '"',
+        sep='',
+    )  # 30 characters (Surname)
 
-            print(
-                'Center: "',
-                fields[425:464].decode('ascii', errors='ignore'),
-                '"',
-                sep='',
-            )  # 39 charaters (Center)
+    print(
+        'Date: "',
+        fields[394:404].decode('ascii', errors='ignore'),
+        '"',
+        sep='',
+    )  # 10 characters (Date)
 
-            print(
-                'Comment: "',
-                fields[464:719].decode('ascii', errors='ignore'),
-                '"',
-                sep='',
-            )  # 255 charaters (Comment)
-            break
+    print(
+        'Sex: "',
+        fields[404:405].decode('ascii', errors='ignore'),
+        '"',
+        sep='',
+    )  # 1 charaters (Sex)
+
+    print(
+        'Folder: "',
+        fields[405:425].decode('ascii', errors='ignore'),
+        '"',
+        sep='',
+    )  # 20 charaters (Folder)
+
+    print(
+        'Center: "',
+        fields[425:464].decode('ascii', errors='ignore'),
+        '"',
+        sep='',
+    )  # 39 charaters (Center)
+
+    print(
+        'Comment: "',
+        fields[464:719].decode('ascii', errors='ignore'),
+        '"',
+        sep='',
+    )  # 255 charaters (Comment)
 
 
 def change_field(
@@ -138,10 +151,10 @@ def anonymise_eeg(
     if verbose:
         print('From:')
         display_fields(original_file)
-    
+
     # Copy the original content
-    content = [line for line in open(original_file, 'rb')]
-    first_line = list(content[0])
+    content = extract_header(original_file)
+
     # Anonymise
     if verbose:
         print('To:')
@@ -149,57 +162,63 @@ def anonymise_eeg(
     if field_name is None:
         pass
     else:
-        change_field(first_line, 314, 364, field_name.encode('ascii'))
+        change_field(content, 314, 364, field_name.encode('ascii'))
 
     if field_surname is None:
         pass
     else:
-        change_field(first_line, 364, 394, field_surname.encode('ascii'))
+        change_field(content, 364, 394, field_surname.encode('ascii'))
 
     if field_birthdate is None:
         pass
     else:
-        change_field(first_line, 394, 404, field_date.encode('ascii'))
+        change_field(content, 394, 404, field_birthdate.encode('ascii'))
 
     if field_sex is None:
         pass
     else:
-        change_field(first_line, 404, 405, field_unknown_1.encode('ascii'))
+        change_field(content, 404, 405, field_sex.encode('ascii'))
 
     if field_folder is None:
         pass
     else:
-        change_field(first_line, 405, 425, field_unknown_1.encode('ascii'))
+        change_field(content, 405, 425, field_folder.encode('ascii'))
 
     if field_centre is None:
         pass
     else:
-        change_field(first_line, 425, 464, field_unknown_1.encode('ascii'))
+        change_field(content, 425, 464, field_centre.encode('ascii'))
  
     if field_comment is None:
         pass
     else:
-        change_field(first_line, 464, 719, field_unknown_1.encode('ascii'))
-
-    content[0] = b''.join(
-        (ch if isinstance(ch, bytes) else bytes([ch]) for ch in first_line),
-    )
+        change_field(content, 464, 719, field_comment.encode('ascii'))
 
     ensure_path(path=os.path.dirname(destination_file))
 
-    with open(destination_file, 'wb') as f:
-        for line in content:
-            f.write(line)
+    content = (char if isinstance(char, bytes) else bytes([char]) for char in content)
+    
+    if not os.path.isfile(destination_file):
+        shutil.copyfile(original_file, destination_file + '.part')
+        os.rename(destination_file + '.part', destination_file)
+    
+    with open(destination_file, 'rb+') as f:
+        f.seek(0)
+
+        for char in content:
+            f.write(char if isinstance(char, bytes) else bytes([char]))
 
     if verbose:
         display_fields(destination_file)
+        
+    return True
 
 
 def find_files(basename:str, sources:dict):
     """Find the path to the file if it exists.
 
     Args:
-        basenme: the basename of the recording.
+        basename: the basename of the recording.
         sources: the sources to use.
     Returns:
         An empty list or a list of string which contains the path to the files.
@@ -283,7 +302,7 @@ def main(
             if isinstance(file_, str):
                 file_cluster = find_files(file_, eegs_lists)
                 unique_names = {os.path.basename(file_) for file_ in file_cluster}
-                path_fragment = 'L{0}/EEG_2'.format(file_[:4])
+                path_fragment = 'L{0}/EEG2'.format(file_[:4])
 
                 if len(unique_names):
                     print(
@@ -292,7 +311,7 @@ def main(
                             len(unique_names),
                         ),
                     )
-                
+
                 else:
                     print('The recording "{0}" is missing.'.format(
                             file_,
@@ -355,7 +374,7 @@ def main(
             field_name = folder_name(recording_file[1])
         else:
             field_name = ''
-        
+
         print(
             'Current file ({0}/{1}):'.format(file_index, number_of_files),
             recording_file[0],

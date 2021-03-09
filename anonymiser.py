@@ -1,4 +1,4 @@
-""" The aim of this script is to anonymise every .eeg in a tree of folders.
+r""" The aim of this script is to anonymise every .eeg in a tree of folders.
 
 Usage:
     .\python-3.8.8-embed-win32\python.exe .\anonymiser.py .\dataset -dp .\dataset_anonym -y
