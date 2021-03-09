@@ -1,3 +1,4 @@
 pandas==1.1.4
 pywinauto==0.6.8
 comtypes==1.1.7
+pywin32
