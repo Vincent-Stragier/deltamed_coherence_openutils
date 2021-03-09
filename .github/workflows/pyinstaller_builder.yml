@@ -27,7 +27,7 @@ jobs:
       run: >
         pyinstaller -F --workpath ./build --distpath ./dist
         --specpath ./ --clean -n anonymiser
-        --icon=./ico/logo.ico ./anonymiser.py
+        --icon=./ico/fpms.ico ./anonymiser.py
     
     - name: Upload the artefact (anonymiser.exe)
       uses: actions/upload-artifact@v2
@@ -39,7 +39,7 @@ jobs:
       run: >
         pyinstaller -F --workpath ./build --distpath ./dist
         --specpath ./ --clean -n coh3toEDF
-        --icon=./ico/logo.ico ./coh3toEDF.py
+        --icon=./ico/fpms.ico ./coh3toEDF.py
     
     - name: Upload the artefact (coh3toEDF.exe)
       uses: actions/upload-artifact@v2
