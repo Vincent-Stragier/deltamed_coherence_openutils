@@ -29,7 +29,7 @@ jobs:
       run: >
         pyinstaller -F --workpath ./build --distpath ./dist
         --specpath ./ --clean -n anonymiser
-        --icon=./ico/fpms.ico ./anonymiser.py
+        --icon=./ico/fpms_anonymous.ico ./anonymiser.py
         
     - name: Build the second package (converter, coh3toEDF.exe)
       run: >
