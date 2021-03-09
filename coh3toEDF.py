@@ -134,23 +134,34 @@ def main(
 
     print('2 - Convert files')
     for index, file_ in enumerate(sorted(files), start=1):
+        # Destination file path
+        if destination_path is None:
+            file_destination_path = file_[:-4] + '.EDF'
+        else:
+            file_destination_path = os.path.join(
+                destination_path,
+                os.path.relpath(file_, original_path)
+            )
+
         print(
-            '({0}/{1}) Convert "{2}" to "{3}.EDF"'.format(
+            '({0}/{1}) Convert "{2}" to "{3}"'.format(
                 index,
                 n_files,
                 file_,
-                file_[:-4],
+                file_destination_path,
             ),
         )
 
-        if os.path.isfile(file_[:-4] + ".EDF") and not overwrite:
+        ensure_path(path=os.path.dirname(file_destination_path))
+
+        if os.path.isfile(file_destination_path) and not overwrite:
             print('File has already been converted.')
         else:
-            if os.path.isfile(file_[:-4] + ".EDF"):
+            if os.path.isfile(file_destination_path):
                 print('File has already been converted (will be overwrited).')
             convert_coh3_to_EDF(
                 eeg_path=file_,
-                edf_path=None,
+                edf_path=file_destination_path,
                 executable_path=EXECUTABLE_PATH,
             )
 
@@ -252,7 +263,6 @@ if __name__ == '__main__':
     main(
         path_to_executable,
         args.path,
-        args.destination_path if args.destination_path is not None
-        else args.path,
+        args.destination_path,
         overwrite=args.overwrite,
     )
