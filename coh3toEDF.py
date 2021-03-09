@@ -2,7 +2,6 @@
 import json
 import os
 import sys
-import time
 
 import pywinauto
 from pywinauto.application import Application
@@ -165,6 +164,14 @@ def main(
                 edf_path=file_destination_path,
                 executable_path=EXECUTABLE_PATH,
             )
+
+    print('3 - Kill the converter process(es).')
+    # Only use one instance at a time
+    os.system(
+        "taskkill /f /im {0}".format(
+            os.path.basename(path_to_executable),
+        ),
+    )
 
 
 if __name__ == '__main__':
