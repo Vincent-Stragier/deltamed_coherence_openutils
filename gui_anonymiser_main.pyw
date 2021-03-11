@@ -341,7 +341,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.Destination_box.setEnabled(not state)
 
     def anonymise(self):
-        if self.destination.text() == os.path.dirname(self.files[0]):
+        if self.destination.text() == self.path:
             result = self.show_overwrite_warning()
             if result != QMessageBox.Yes:
                 return
