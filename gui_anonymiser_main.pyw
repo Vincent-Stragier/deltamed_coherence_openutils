@@ -415,7 +415,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         # Disable Cancel and enable the interfaces.
         self.stateChanged.emit(False)
-        self.progress_text_changed.emit('IDLE')
+        self.progress_text_changed.emit(
+            '{0} ({1}/{2})'.format('IDLE', file_index, n_files)
+        )
         # self.okChanged.emit(False)
 
     def cancel(self):
