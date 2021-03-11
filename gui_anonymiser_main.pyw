@@ -244,7 +244,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
     MainApp class inherit from QMainWindow and from
     Ui_MainWindow class in UiMainApp module.
     """
-    progressChanged = pyqtSignal(int)
+    progress_changed = pyqtSignal(int)
+    progress_text_changed = pyqtSignal(str)
     stateChanged = pyqtSignal(bool)
     okChanged = pyqtSignal(bool)
 
@@ -271,8 +272,11 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.destination.setReadOnly(True)
 
         # Set progress bar
-        self.progressBar.setValue(0)
-        self.progressChanged.connect(self.progressBar.setValue)
+        self.progress_bar.setValue(0)
+        self.progress_changed.connect(self.progress_bar.setValue)
+        self.progress_bar.setFormat('IDLE')
+        self.progress_bar.setAlignment(Qt.AlignCenter) 
+        self.progress_text_changed.connect(self.progress_bar.setFormat)
 
         # Set the slots
         self.path = ''
@@ -377,7 +381,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             # Stop the operation if the cancel flag is set.
             if not self.cancel_process.empty():
                 if self.cancel_process.get():
-                    self.progressChanged.emit(0)
+                    self.progress_changed.emit(0)
                     break
 
             file_destination = os.path.join(
@@ -391,6 +395,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
             if folder_as_name_check and name_check:
                 name = os.path.basename(os.path.dirname(file_destination))
 
+            self.progress_text_changed.emit(
+                '{0} ({1}/{2})'.format(file_, file_index, n_files)
+            )
+
             anonymise_eeg(
                 file_,
                 file_destination,
@@ -403,11 +411,12 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 field_comment=comment,
             )
 
-            self.progressChanged.emit(int(file_index * 100 / n_files))
+            self.progress_changed.emit(int(file_index * 100 / n_files))
 
         # Disable Cancel and enable the interfaces.
         self.stateChanged.emit(False)
-        self.okChanged.emit(False)
+        self.progress_text_changed.emit('IDLE')
+        # self.okChanged.emit(False)
 
     def cancel(self):
         # Set cancel flag
@@ -482,7 +491,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.OK.setEnabled(True)
             self.path = os.path.dirname(self.files[0])
             self.save_preferences(self.path)
-            self.progressBar.setValue(0)
+            self.progress_bar.setValue(0)
             if self.destination.text() == '':
                 self.destination.setText(self.path)
 
@@ -509,7 +518,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
             self.path = folder
             self.save_preferences(self.path)
-            self.progressBar.setValue(0)
+            self.progress_bar.setValue(0)
             if self.destination.text() == '':
                 self.destination.setText(self.path)
 
