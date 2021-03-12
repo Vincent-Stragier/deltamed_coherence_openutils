@@ -27,13 +27,13 @@ jobs:
 
     - name: Build the first package (EEG anonymiser, anonymiser.exe)
       run: >
-        py -3.8-32 PyInstaller -F --workpath ./build --distpath ./
+        pyinstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n anonymiser
         --icon=./ico/fpms_anonymous.ico ./anonymiser.py
 
     - name: Build the second package (converter, coh3toEDF.exe)
       run: >
-        py -3.8-32 PyInstaller -F --workpath ./build --distpath ./
+        pyinstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n coh3toEDF
         --icon=./ico/fpms.ico ./coh3toEDF.py
     
@@ -42,14 +42,14 @@ jobs:
 
     - name: Build the third package (EEG anonymiser GUI, coh3toEDF.exe)
       run: >
-        py -3.8-32 PyInstaller -F --workpath ./build --distpath ./
+        pyinstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n EEG_anonymiser
         --icon=./ico/fpms_anonymous.ico
         --add-data './ico/;ico' .\gui_anonymiser_main.pyw
 
     - name: Build the fourth package (dataset maker, dataset_maker.exe)
       run: >
-        py -3.8-32 PyInstaller -F --workpath ./build --distpath ./
+        pyinstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n dataset_maker
         --icon=./ico/fpms.ico ./dataset_maker.py
 
