@@ -27,33 +27,33 @@ jobs:
 
     - name: Build the first package (EEG anonymiser, anonymiser.exe)
       run: >
-        pyinstaller -F --workpath ./build --distpath ./
+        py -3.8-32 -m PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n anonymiser
         --icon=./ico/fpms_anonymous.ico ./anonymiser.py
 
     - name: Build the second package (converter, coh3toEDF.exe)
       run: >
-        pyinstaller -F --workpath ./build --distpath ./
+        py -3.8-32 -m PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n coh3toEDF
         --icon=./ico/fpms.ico ./coh3toEDF.py
     
     - name: Generate the anonymiser GUI Python script from the .ui file
       run: python .\ui_to_py_converter.py .\anonymiser_gui.ui .\anonymiser_gui.py
 
-    - name: Build the third package (EEG anonymiser GUI, coh3toEDF.exe)
+    - name: Build the third package (EEG anonymiser GUI, EEG_anonymiser.exe)
       run: >
-        pyinstaller -F --workpath ./build --distpath ./
+        py -3.8-32 -m PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n EEG_anonymiser
         --icon=./ico/fpms_anonymous.ico
         --add-data './ico/;ico' .\gui_anonymiser_main.pyw
 
     - name: Build the fourth package (dataset maker, dataset_maker.exe)
       run: >
-        pyinstaller -F --workpath ./build --distpath ./
+        py -3.8-32 -m PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n dataset_maker
         --icon=./ico/fpms.ico ./dataset_maker.py
 
-    - name: Upload the artefact (coh3toEDF.exe)
+    - name: Upload the artefact (anonymiser.exe, coh3toEDF.exe, EEG_anonymiser.exe, dataset_maker.exe)
       uses: actions/upload-artifact@v2
       with:
         name: Executables
