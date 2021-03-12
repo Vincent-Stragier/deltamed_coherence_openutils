@@ -13,9 +13,9 @@ import multiprocessing as mp
 import os
 import shutil
 import sys
-import win32api
 
 import pandas as pd
+import win32api
 
 
 def exe_path():
@@ -255,17 +255,20 @@ def main(
     parent_folder_as_name: str
 ):
     # Load config information
-    configs = json.load(open(CONFIG_FILE))
-
     try:
         configs = json.load(open(CONFIG_FILE))
     except FileNotFoundError:
-        drives = win32api.GetLogicalDriveStrings().split('\000')[:-1]
-        configs = {'data_sources': drives}
+        drives = win32api.GetLogicalDriveStrings()
+        configs = {
+            'data_sources': [
+                drivestr for drivestr in drives.split('\000') if drivestr
+            ],
+        }
         print(
             'Generating "dataset_maker.config" file, please edit it '
-            'to set the correct path to the executable. '
-            'You can find it here: {0}'.format(SCRIPT_PATH)
+            'to set the correct paths to the sources. \n'
+            'You can find the configuration file here: {0}\n'.format(SCRIPT_PATH)
+
         )
         json.dump(configs, open(CONFIG_FILE, 'w'))
         sys.exit(1)

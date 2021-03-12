@@ -2,7 +2,6 @@
 import json
 import os
 import sys
-from inspect import getsourcefile
 
 import pywinauto
 from pywinauto.application import Application
@@ -25,8 +24,8 @@ except FileNotFoundError:
     EXECUTABLE_PATH = os.path.join(SCRIPT_PATH, 'coh3toEDF.exe')
     print(
         'Generating "coh3toEDF.config" file, please edit it '
-        'to set the correct path to the executable. '
-        'You can find it here: {0}'.format(SCRIPT_PATH)
+        'to set the correct path to the executable "coh3toEDF.exe".\n'
+        'You can find "coh3toEDF.config" here: {0}'.format(SCRIPT_PATH)
     )
     config = {'path_to_executable': EXECUTABLE_PATH}
     json.dump(config, open(CONFIG_FILE, 'w'))
