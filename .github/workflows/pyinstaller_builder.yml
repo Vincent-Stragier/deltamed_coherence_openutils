@@ -19,21 +19,21 @@ jobs:
 
     - name: Install the requirements for the GUI
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install -r requirements.txt
+        py -3.8-32 -m pip install --upgrade pip
+        py -3.8-32 -m pip install -r requirements.txt
 
     - name: Install PyInstaller
-      run: python -m pip install --upgrade pyinstaller
+      run: py -3.8-32 -m pip install --upgrade pyinstaller
 
     - name: Build the first package (EEG anonymiser, anonymiser.exe)
       run: >
-        pyinstaller -F --workpath ./build --distpath ./
+        py -3.8-32 PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n anonymiser
         --icon=./ico/fpms_anonymous.ico ./anonymiser.py
 
     - name: Build the second package (converter, coh3toEDF.exe)
       run: >
-        pyinstaller -F --workpath ./build --distpath ./
+        py -3.8-32 PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n coh3toEDF
         --icon=./ico/fpms.ico ./coh3toEDF.py
     
@@ -42,14 +42,14 @@ jobs:
 
     - name: Build the third package (EEG anonymiser GUI, coh3toEDF.exe)
       run: >
-        pyinstaller.exe -F --workpath ./build --distpath ./
+        py -3.8-32 PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n EEG_anonymiser
         --icon=./ico/fpms_anonymous.ico
         --add-data './ico/;ico' .\gui_anonymiser_main.pyw
 
     - name: Build the fourth package (dataset maker, dataset_maker.exe)
       run: >
-        pyinstaller -F --workpath ./build --distpath ./
+        py -3.8-32 PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n dataset_maker
         --icon=./ico/fpms.ico ./dataset_maker.py
 
