@@ -34,7 +34,7 @@ jobs:
     - name: Build the second package (converter, coh3toEDF.exe)
       run: >
         py -3.8-32 -m PyInstaller -F --workpath ./build --distpath ./
-        --specpath ./ --clean -n coh3toEDF
+        --specpath ./ --clean -n coh3toEDFbatch
         --icon=./ico/fpms.ico ./coh3toEDF.py
     
     - name: Generate the anonymiser GUI Python script from the .ui file
@@ -57,7 +57,5 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Executables
-        path: |
-            ./*.exe
-            ./*.config
+        path: ./*.exe
 
