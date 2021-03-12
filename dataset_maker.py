@@ -13,10 +13,19 @@ import multiprocessing as mp
 import os
 import shutil
 import sys
+import win32api
 
 import pandas as pd
 
-SCRIPT_PATH = os.path.dirname(__file__)
+
+def exe_path():
+    """ Return the path of the executable or of the script. """
+    if hasattr(sys, 'frozen'):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+SCRIPT_PATH = exe_path()
 CONFIG_FILE = 'dataset_maker.config'
 CONFIG_FILE = os.path.join(SCRIPT_PATH, CONFIG_FILE)
 
@@ -247,6 +256,19 @@ def main(
 ):
     # Load config information
     configs = json.load(open(CONFIG_FILE))
+
+    try:
+        configs = json.load(open(CONFIG_FILE))
+    except FileNotFoundError:
+        drives = win32api.GetLogicalDriveStrings().split('\000')[:-1]
+        configs = {'data_sources': drives}
+        print(
+            'Generating "dataset_maker.config" file, please edit it '
+            'to set the correct path to the executable. '
+            'You can find it here: {0}'.format(SCRIPT_PATH)
+        )
+        json.dump(configs, open(CONFIG_FILE, 'w'))
+        sys.exit(1)
 
     # List all the files contained in the sources
     data_sources = configs['data_sources']

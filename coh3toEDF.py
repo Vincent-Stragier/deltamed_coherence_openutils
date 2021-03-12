@@ -1,15 +1,35 @@
-# comtypes==1.1.7 pywinauto pywin32==224
+# comtypes==1.1.7 pywinauto pywin32==228 and Python 3.8
 import json
 import os
 import sys
+from inspect import getsourcefile
 
 import pywinauto
 from pywinauto.application import Application
 
-SCRIPT_PATH = os.path.dirname(__file__)
+
+def exe_path():
+    """ Return the path of the executable or of the script. """
+    if hasattr(sys, 'frozen'):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+SCRIPT_PATH = exe_path()
 CONFIG_FILE = 'coh3toEDF.config'
 CONFIG_FILE = os.path.join(SCRIPT_PATH, CONFIG_FILE)
-EXECUTABLE_PATH = json.load(open(CONFIG_FILE))['path_to_executable']
+
+try:
+    EXECUTABLE_PATH = json.load(open(CONFIG_FILE))['path_to_executable']
+except FileNotFoundError:
+    EXECUTABLE_PATH = os.path.join(SCRIPT_PATH, 'coh3toEDF.exe')
+    print(
+        'Generating "coh3toEDF.config" file, please edit it '
+        'to set the correct path to the executable. '
+        'You can find it here: {0}'.format(SCRIPT_PATH)
+    )
+    config = {'path_to_executable': EXECUTABLE_PATH}
+    json.dump(config, open(CONFIG_FILE, 'w'))
 
 
 def list_files(path: str):
@@ -262,11 +282,28 @@ if __name__ == '__main__':
     if args.executable_path is None:
         # Load config information
         configs = json.load(open(CONFIG_FILE))
-
-        # List all the files contained in the sources
         path_to_executable = configs['path_to_executable']
+
+        if not os.path.isfile(path_to_executable):
+            print(
+                '"{0}" does not exist. '
+                'The path to the executable "coh3toEDF.exe" is not valid. '
+                'Please check that the path provided in the "coh3toEDG.config"'
+                ' file is correct.'.format(path_to_executable)
+            )
+            sys.exit(1)
+
     else:
         path_to_executable = args.executable_path
+        if not os.path.isfile(path_to_executable):
+            print(
+                '"{0}" does not exist. '
+                'The path to the executable "coh3toEDF.exe" is not valid. '
+                'Please check that the path provided as argument.'.format(
+                    path_to_executable,
+                )
+            )
+            sys.exit(1)
 
     main(
         path_to_executable,

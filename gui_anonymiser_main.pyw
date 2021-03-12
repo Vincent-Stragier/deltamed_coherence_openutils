@@ -45,9 +45,18 @@ from anonymiser_gui import Ui_MainWindow
 # Worker class for the QThread handler
 # https://stackoverflow.com/questions/50855210/how-to-pass-parameters-into-qrunnable-for-pyqt5
 
-SCRIPT_PATH = os.path.dirname(__file__)
-PREFERENCES_PATH = './data/preferences.config'
-PREFERENCES_PATH = os.path.join(SCRIPT_PATH, PREFERENCES_PATH)
+
+def exe_path():
+    """ Return the path of the executable or of the script. """
+    if hasattr(sys, 'frozen'):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+SCRIPT_PATH = exe_path()
+PREFERENCES_PATH = 'preferences.config'
+PREFERENCES_PATH = os.path.join(SCRIPT_PATH, 'data', PREFERENCES_PATH)
+
 
 class Worker(QRunnable):  # pylint: disable=too-few-public-methods
     """Worker class to run a function in a QThread."""
@@ -63,16 +72,6 @@ class Worker(QRunnable):  # pylint: disable=too-few-public-methods
     def run(self):
         """Run the function in the worker."""
         self.function(*self.args, **self.kwargs)
-
-
-# class FileDialog(QFileDialog):
-#     def __init__(self, *args, **kwargs):
-#         super(FileDialog, self).__init__(*args, **kwargs)
-#         self.setOption(QFileDialog.DontUseNativeDialog, True)
-#         self.setFileMode(QFileDialog.ExistingFiles)
-
-#     def accept(self):
-#         super(FileDialog, self).accept()
 
 
 def resource_path(relative_path: str):
@@ -268,14 +267,13 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.okChanged.connect(self.OK.setEnabled)
 
         # Set editable line to read only.
-        # self.source.setReadOnly(True)
         self.destination.setReadOnly(True)
 
         # Set progress bar
         self.progress_bar.setValue(0)
         self.progress_changed.connect(self.progress_bar.setValue)
         self.progress_bar.setFormat('IDLE')
-        self.progress_bar.setAlignment(Qt.AlignCenter) 
+        self.progress_bar.setAlignment(Qt.AlignCenter)
         self.progress_text_changed.connect(self.progress_bar.setFormat)
 
         # Set the slots
@@ -459,7 +457,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             'You are going to overwrite the file(s).\n\n'
             'Do you want to continue and process the file(s) inplace?'
         )
-        msg.setStandardButtons(QMessageBox.Yes|QMessageBox.Cancel)
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
         return msg.exec_()
 
     def select_files_browser(self):
@@ -497,10 +495,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
             if self.destination.text() == '':
                 self.destination.setText(self.path)
 
-    # def select_folder_browser(self):
-    #     worker = Worker(self._select_folder_browser)
-    #     self.threadpool.start(worker)
-
     def select_folder_browser(self):
         """Show the files browser."""
         dialog = QFileDialog(self)
@@ -530,7 +524,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
             ], key=lambda x: os.path.basename(x))
 
             self.OK.setEnabled(True)
-            
 
     def select_destination_folder_browser(self):
         """Show the files browser to select the destination."""
@@ -590,12 +583,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
         else:
             self.folder_as_name_check.setEnabled(False)
 
-        # ensure_path(resource_path(os.path.dirname(PREFERENCES_PATH)))
-        # with open(resource_path(PREFERENCES_PATH), 'w') as outfile:
-        #     json.dump(preferences, outfile)
         ensure_path(os.path.dirname(PREFERENCES_PATH))
-        with open(PREFERENCES_PATH, 'w') as outfile:
-            json.dump(preferences, outfile)
+        json.dump(preferences, open(PREFERENCES_PATH, 'w'))
 
 
 if __name__ == '__main__':
