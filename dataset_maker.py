@@ -19,8 +19,8 @@ import win32api
 from utils import (
     anonymise_eeg,
     display_arguments,
-    handle_yes_no,
     find_files,
+    handle_yes_no,
     list_files,
 )
 

@@ -9,13 +9,7 @@ import traceback
 import pywinauto
 from pywinauto.application import Application
 
-from utils import (
-    display_arguments,
-    ensure_path,
-    handle_yes_no,
-    list_files,
-)
-
+from utils import display_arguments, ensure_path, handle_yes_no, list_files
 
 def exe_path():
     """ Return the path of the executable or of the script. """
