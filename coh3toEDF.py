@@ -1,10 +1,14 @@
+""" This script is intended to batch convert Deltamed .eeg files to .edf files.
+"""
 # comtypes==1.1.7 pywinauto pywin32==228 and Python 3.8
 import json
 import os
 import sys
+import traceback
 
 import pywinauto
 from pywinauto.application import Application
+from utils import display_arguments, ensure_path, handle_yes_no, list_files
 
 
 def exe_path():
@@ -31,29 +35,7 @@ except FileNotFoundError:
     json.dump(config, open(CONFIG_FILE, 'w'))
 
 
-def list_files(path: str):
-    """List all the files in a folder and subfolders.
-
-    Args:
-        path: the path to use as parent directory.
-    Returns:
-        A list of files.
-    """
-    files_list = set()
-
-    for folder, _, files in os.walk(path):
-        for file_ in files:
-            files_list.add(os.path.join(folder, file_))
-
-    return list(files_list)
-
-
-def ensure_path(path: str):
-    if not os.path.isdir(path):
-        os.makedirs(path)
-
-
-def convert_coh3_to_EDF(
+def convert_coh3_to_edf(
     eeg_path: str,
     edf_path: str = None,
     executable_path: str = EXECUTABLE_PATH,
@@ -108,38 +90,36 @@ def convert_coh3_to_EDF(
         pywinauto.findwindows.ElementAmbiguousError,
         pywinauto.findbestmatch.MatchError,
     ):
-        import traceback
         traceback.print_exc()
 
         # Only use one instance at a time
         os.system(
-            "taskkill /f /im {0}".format(
+            'taskkill /f /im {0}'.format(
                 os.path.basename(executable_path),
             ),
         )
-
-        convert_coh3_to_EDF(eeg_path, edf_path, executable_path)
+        convert_coh3_to_edf(eeg_path, edf_path, executable_path)
 
     # If the windows if not found, relaunch the program
     except pywinauto.findwindows.ElementNotFoundError:
-        import traceback
         traceback.print_exc()
-
-        convert_coh3_to_EDF(eeg_path, edf_path, executable_path)
+        convert_coh3_to_edf(eeg_path, edf_path, executable_path)
 
 
 def main(
-    path_to_executable: str,
     original_path: str,
+    executable_path: str = EXECUTABLE_PATH,
     destination_path: str = None,
     overwrite: bool = False,
 ):
     """ Run batch conversion process.
 
     Args:
-        path_to_executable: path to the converter executable.
         original_path: path to the dataset to convert.
+        executable_path: path to the converter executable.
         destination_path: destination path.
+        overwrite: if True, any previous .edf
+        with the same name will be overwrited.
     """
     print('1 - List the files to convert...')
 
@@ -178,17 +158,16 @@ def main(
         else:
             if os.path.isfile(file_destination_path):
                 print('File has already been converted (will be overwrited).')
-            convert_coh3_to_EDF(
+            convert_coh3_to_edf(
                 eeg_path=file_,
                 edf_path=file_destination_path,
-                executable_path=EXECUTABLE_PATH,
+                executable_path=executable_path,
             )
 
     print('3 - Kill the converter process(es).')
-    # Only use one instance at a time
     os.system(
-        "taskkill /f /im {0}".format(
-            os.path.basename(path_to_executable),
+        'taskkill /f /im {0}'.format(
+            os.path.basename(executable_path),
         ),
     )
 
@@ -251,32 +230,8 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-
-    print('The following arguments have been parsed:')
-    for k, v in vars(args).items():
-        print('{0}: {1}'.format(k, v))
-
-    if not args.no:
-        print()
-        if not args.yes:
-            try:
-                while True:
-                    conti = input('Do you want to run the program (yes/no)? ')
-                    if conti.lower() in ('y', 'yes'):
-                        break
-
-                    elif conti.lower() in ('n', 'no'):
-                        sys.exit()
-
-            except KeyboardInterrupt:
-                print(
-                    '\nThe user requested the end of the program'
-                    ' (KeyboardInterrupt).',
-                )
-
-                sys.exit()
-    else:
-        sys.exit()
+    display_arguments(args)
+    handle_yes_no(args)
 
     if args.executable_path is None:
         # Load config information
