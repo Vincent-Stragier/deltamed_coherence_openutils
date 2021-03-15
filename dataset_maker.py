@@ -15,7 +15,6 @@ import sys
 
 import pandas as pd
 import win32api
-
 from utils import (
     anonymise_eeg,
     display_arguments,
