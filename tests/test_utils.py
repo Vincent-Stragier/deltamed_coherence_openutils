@@ -1,6 +1,7 @@
 """ Test the functions of utils.py """
 import argparse
 import io
+import hashlib
 import os
 import sys
 import tempfile
@@ -13,10 +14,20 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from utils import (
     display_arguments,
     ensure_path,
+    extract_header,
     find_files,
     handle_yes_no,
     list_files,
+    resource_path,
+    split_keep_sep,
 )
+
+
+def exe_path():
+    """ Return the path of the executable or of the script. """
+    if hasattr(sys, 'frozen'):
+        return os.path.dirname(os.path.abspath(sys.executable))
+    return os.path.dirname(os.path.abspath(__file__))
 
 
 def create_parser():
@@ -258,6 +269,57 @@ class TestUtils(unittest.TestCase):
                 '\n\nThe user requested the end of the program '
                 '(KeyboardInterrupt).\n',
             )
+
+    def test_split_keep_sep(self):
+        """ Test the function split_keep_sep. """
+        test_string = 'this\nis\na\ntest\nstring\n'
+        expected_split = ['this\n', 'is\n', 'a\n', 'test\n', 'string\n', '']
+        separator = '\n'
+        splitted_string = split_keep_sep(test_string, separator)
+
+        self.assertEqual(splitted_string, expected_split)
+
+    def test_resource_path(self):
+        """ Test the function resource_path. """
+        # Will return the absolute path to utils.py folder
+        path = resource_path('') 
+
+        if hasattr(sys, 'frozen'):  # Probably never during the test.
+            check_path = sys._MEIPASS
+        else:
+            check_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                '',
+            )
+
+        self.assertEqual(path, check_path)
+    
+    def test_extract_header(self):
+        """ Test the function extract_header. """
+        path_eeg_r = os.path.join(exe_path(), 'test_data', 'EEG_R.eeg')
+        header_eeg_r = extract_header(path_eeg_r)
+        hashed_expected_header_eeg_r = (
+            '2ed65bfe84f0db86fe36df25d9cf05287986fa8d8146f381a718f3b149213dae'
+        )
+        hashed_header_eeg_r = hashlib.sha256(
+            b''.join(header_eeg_r)
+        ).hexdigest()
+        self.assertEqual(hashed_header_eeg_r, hashed_expected_header_eeg_r)
+
+        path_eeg_r_anonymised = os.path.join(
+            exe_path(), 'test_data', 'EEG_R_anonymised.eeg',
+        )
+        header_eeg_r_anonymised = extract_header(path_eeg_r_anonymised)
+        hashed_expected_header_eeg_r_anonymised = (
+            'fde46c624b9401a540ebdd528cbeb524a64286f30ea1720552d1a14e37598e9c'
+        )
+        hashed_header_eeg_r_anonymised = hashlib.sha256(
+            b''.join(header_eeg_r_anonymised)
+        ).hexdigest()
+        self.assertEqual(
+            hashed_header_eeg_r_anonymised,
+            hashed_expected_header_eeg_r_anonymised,
+        )
 
 if __name__ == '__main__':
     unittest.main()
