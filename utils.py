@@ -104,7 +104,8 @@ def split_keep_sep(string, separator):
     """
     return reduce(
         lambda acc, elem: acc[:-1] + [acc[-1] + elem] if elem == separator
-        else acc + [elem], re.split('(%s)' % re.escape(separator), string), [])
+        else acc + [elem], re.split('(%s)' % re.escape(separator), string), [],
+    )
 
 
 # PyInstaller related function
