@@ -219,7 +219,7 @@ def anonymise_eeg(
         change_field(content, 425, 464, field_centre.encode('ascii'))
 
     if field_comment is not None:
-        change_field(content, 464, 719, field_comment.encode('ascii'))
+        change_field(content, 464, 720, field_comment.encode('ascii'))
 
     ensure_path(path=os.path.dirname(destination_file))
 

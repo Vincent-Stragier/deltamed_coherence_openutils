@@ -1,6 +1,7 @@
 """ Test the functions of utils.py """
 import argparse
 import io
+import filecmp
 import hashlib
 import os
 import sys
@@ -12,6 +13,8 @@ from unittest.mock import patch
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from utils import (
+    anonymise_eeg,
+    change_field,
     display_arguments,
     ensure_path,
     extract_header,
@@ -320,6 +323,72 @@ class TestUtils(unittest.TestCase):
             hashed_header_eeg_r_anonymised,
             hashed_expected_header_eeg_r_anonymised,
         )
+
+    def test_change_field(self):
+        """ Test the function change_field. """
+        path_eeg_r = os.path.join(exe_path(), 'test_data', 'EEG_R.eeg')
+        header_eeg_r = extract_header(path_eeg_r)
+        hashed_expected_header_eeg_r = (
+            '2ed65bfe84f0db86fe36df25d9cf05287986fa8d8146f381a718f3b149213dae'
+        )
+        hashed_header_eeg_r = hashlib.sha256(
+            b''.join(header_eeg_r)
+        ).hexdigest()
+        self.assertEqual(hashed_header_eeg_r, hashed_expected_header_eeg_r)
+
+        # Just empty all the fields
+        change_field(header_eeg_r, 314, 720, [])
+
+        path_eeg_r_anonymised = os.path.join(
+            exe_path(), 'test_data', 'EEG_R_anonymised.eeg',
+        )
+        header_eeg_r_anonymised = extract_header(path_eeg_r_anonymised)
+        hashed_expected_header_eeg_r_anonymised = (
+            'fde46c624b9401a540ebdd528cbeb524a64286f30ea1720552d1a14e37598e9c'
+        )
+        hashed_header_eeg_r_anonymised = hashlib.sha256(
+            b''.join(header_eeg_r_anonymised)
+        ).hexdigest()
+        self.assertEqual(
+            hashed_header_eeg_r_anonymised,
+            hashed_expected_header_eeg_r_anonymised,
+        )
+        self.assertEqual(
+            b''.join(header_eeg_r),
+            b''.join(header_eeg_r_anonymised),
+        )
+
+    def test_anonymise_eeg(self):
+        """ Test the function anonymise_eeg. """
+        path_eeg_r = os.path.join(exe_path(), 'test_data', 'EEG_R.eeg')
+        path_eeg_r_anonymised_with_deltamed = os.path.join(
+            exe_path(), 'test_data', 'EEG_R_anonymised.eeg',
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            path_eeg_r_anonymised = os.path.join(
+                tmpdirname, 'EEG_R_anonymised.eeg',
+            )
+            anonymise_eeg(
+                path_eeg_r,
+                path_eeg_r_anonymised,
+            )
+            compare_against_old = filecmp.cmp(
+                path_eeg_r,
+                path_eeg_r_anonymised,
+                shallow=False,
+            )
+            # Anonymised file should be different from source
+            self.assertEqual(compare_against_old, False)
+            compare_against_anonymised_with_deltamed = filecmp.cmp(
+                path_eeg_r_anonymised_with_deltamed,
+                path_eeg_r_anonymised,
+                shallow=False,
+            )
+            # Anonymised file should be the same as the file anonymised
+            # with Deltamed's tool.
+            self.assertEqual(compare_against_anonymised_with_deltamed, True)
+
 
 if __name__ == '__main__':
     unittest.main()
