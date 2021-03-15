@@ -1,15 +1,46 @@
 """ Test the functions of utils.py """
+import argparse
+import io
 import os
 import sys
 import tempfile
 import unittest
-
-import numpy as np
+from unittest.mock import patch
 
 # Add the path of the script to the module
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from utils import list_files, ensure_path
+from utils import (
+    display_arguments,
+    ensure_path,
+    find_files,
+    handle_yes_no,
+    list_files,
+)
+
+
+def create_parser():
+    """ Minimal test parser. """
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        '-y',
+        '--yes',
+        help='if set, the program will start directly',
+        action='store_true',
+        default=False,
+    )
+
+    group.add_argument(
+        '-n',
+        '--no',
+        help='if set, the program will exit directly',
+        action='store_true',
+        default=False,
+    )
+
+    return parser
+
 
 class TestUtils(unittest.TestCase):
 
@@ -44,7 +75,6 @@ class TestUtils(unittest.TestCase):
     
     def test_ensure_path(self):
         """ Test the function ensure_path. """
-
         with tempfile.TemporaryDirectory() as tmpdirname:
             subfolder_path = os.path.join(tmpdirname, 'folder', 'subfolder')
             folder_path = os.path.join(tmpdirname, 'folder')
@@ -66,177 +96,168 @@ class TestUtils(unittest.TestCase):
             # Folder and subfolder should exist
             self.assertEqual(os.path.exists(subfolder_path), True)
             self.assertEqual(os.path.exists(folder_path), True)
+    
+    def test_find_files(self):
+        """ Test the function find_files. """
+        files = [
+            os.path.join('folder_0', 'subfolder_0', 'file_0'),
+            os.path.join('folder_0', 'subfolder_0', 'file_1'),
+            os.path.join('folder_0', 'subfolder_1', 'file_0'),
+            os.path.join('folder_0', 'subfolder_1', 'file_1'),
+            os.path.join('folder_1', 'subfolder_0', 'file_0'),
+            os.path.join('folder_1', 'subfolder_0', 'file_1'),
+            os.path.join('folder_1', 'subfolder_1', 'file_0'),
+            os.path.join('folder_1', 'subfolder_1', 'file_1'),
+        ]
 
-    # def test_exploit_edf(self):
-    #     file_path = fe.extract_files_list(
-    #         path=os.path.join(
-    #             os.path.dirname(__file__),
-    #             'data'),
-    #         extension_filter='tse')[0] + '.edf'
+        sources_0 = {'folder_0' : files[:4], 'folder_1' : files[4:],}
 
-    #     # Produce an OS error
-    #     print('"exploit_edf()" will produce an "error" message')
-    #     _, _, exit_code, _, _, _, _ = fe.exploit_edf(
-    #         filename=file_path + '.error',
-    #     )
+        sources_1 = {
+            'folder_0' : ['1', '2', '3', '4'], 'folder_1' : files[4:],
+        }
 
-    #     print('"exploit_edf()" did produce the "error" message')
-    #     self.assertEqual(exit_code, 2)
+        sources_2 = {
+            'folder_1' : ['1', '2', '3', '4'], 'folder_0' : files[:4],
+        }
 
-    #     (
-    #         eeg_signal_labels,
-    #         eeg_signal,
-    #         exit_code,
-    #         sampling_rate,
-    #         tot_dur,
-    #         nb_ch,
-    #         nb_eeg_ch,
-    #     ) = fe.exploit_edf(filename=file_path)
+        sources_3 = {
+            'folder_1' : ['1', '2', '3', '4'],
+            'folder_0' : ['1', '2', '3', '4'],
+        }
 
-    #     # Extract the information from a .edf file
-    #     self.assertEqual(len(eeg_signal_labels), 32)
-    #     self.assertEqual(np.array(eeg_signal).shape, (32, 8000))
-    #     self.assertEqual(exit_code, 0)
-    #     self.assertEqual(sampling_rate, 400)
-    #     self.assertEqual(tot_dur, 20)
-    #     self.assertEqual(nb_ch, 32)
-    #     self.assertEqual(nb_eeg_ch, 32)
+        self.assertEqual(find_files(basename_prefix='file', sources=sources_0), files[:4])
+        self.assertEqual(find_files(basename_prefix='file', sources=sources_1), files[4:])
+        self.assertEqual(find_files(basename_prefix='file', sources=sources_2), files[:4])
+        self.assertEqual(find_files(basename_prefix='file', sources=sources_3), [])
 
-    # def test_file_len(self):
-    #     import tempfile
+    def test_display_arguments(self):
+        """ Test the function display_arguments. """
+        # Build a dummy arg paser
+        parser = create_parser()
+        args_0 = parser.parse_args(['--yes'])
+        args_1 = parser.parse_args(['--no'])
 
-    #     filename = 'temp.txt'
-    #     n_line = int(6)  # Number of lines
+        # Capture sys.stdout, etc.
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            display_arguments(args=args_0, message='')
+            self.assertEqual(
+                captured_output.getvalue(),
+                (
+                    'The following arguments have been parsed:'
+                    '\nyes: True\nno: False\n'
+                ),
+            )
 
-    #     with tempfile.TemporaryDirectory() as tmpdirname:
-    #         with open(os.path.join(tmpdirname, filename), mode='w+') as f:
-    #             for i in range(1, n_line + 1):
-    #                 f.write('line %s\n' % (i))
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            display_arguments(args=args_1, message='')
+            self.assertEqual(
+                captured_output.getvalue(),
+                (
+                    'The following arguments have been parsed:'
+                    '\nyes: False\nno: True\n'
+                ),
+            )
 
-    #         self.assertEqual(
-    #             fe.file_len(
-    #                 os.path.join(
-    #                     tmpdirname,
-    #                     filename,
-    #                 ),
-    #             ),
-    #             n_line,
-    #         )
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            display_arguments(args=args_0, message=None)
+            self.assertEqual(
+                captured_output.getvalue(), 'yes: True\nno: False\n',
+            )
 
-    # def test_extract_files_list(self):
-    #     """# noqa: RST301
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            display_arguments(args=args_1, message=None)
+            self.assertEqual(
+                captured_output.getvalue(), 'yes: False\nno: True\n',
+            )
 
-    #     test
-    #         │   unit_test_feature_extraction.py
-    #         │
-    #         └───data
-    #             └───00000258
-    #                 ├───s002_2003_07_21
-    #                 │       00000258_s002.txt
-    #                 │       00000258_s002_t000.edf
-    #                 │       00000258_s002_t000.lbl
-    #                 │       00000258_s002_t000.tse
-    #                 │       00000258_s002_t002.edf
-    #                 │       00000258_s002_t002.lbl
-    #                 │       00000258_s002_t002.tse
-    #                 │
-    #                 └───s003_2003_07_22
-    #                         00000258_s003.txt
-    #                         00000258_s003_t000.edf
-    #                         00000258_s003_t000.lbl
-    #                         00000258_s003_t000.tse
-    #                         00000258_s003_t001.edf
-    #                         00000258_s003_t001.lbl
-    #                         00000258_s003_t001.tse
-    #                         00000258_s003_t002.edf
-    #                         00000258_s003_t002.lbl
-    #                         00000258_s003_t002.tse
-    #                         00000258_s003_t003.edf
-    #                         00000258_s003_t003.lbl
-    #                         00000258_s003_t003.tse
-    #                         00000258_s003_t004.edf
-    #                         00000258_s003_t004.lbl
-    #                         00000258_s003_t004.tse
-    #                         00000258_s003_t005.edf
-    #                         00000258_s003_t005.lbl
-    #                         00000258_s003_t005.tse
-    #     """
-    #     # print('\n'.join(fe.extract_files_list(
-    #     #     path=os.path.join(
-    #     #         os.path.dirname(__file__),
-    #     #         'data',
-    #     #     ),
-    #     #     extension_filter = 'tse')))
-    #     self.assertEqual(len(fe.extract_files_list(
-    #         path=os.path.join(
-    #             os.path.dirname(__file__),
-    #             'data',
-    #         ),
-    #         extension_filter='tse')), 8)
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            display_arguments(args=args_0, message='Parsed')
+            self.assertEqual(
+                captured_output.getvalue(),
+                'Parsed\nyes: True\nno: False\n',
+            )
 
-    #     self.assertEqual(len(fe.extract_files_list(
-    #         path=os.path.join(
-    #             os.path.dirname(__file__),
-    #             'data',
-    #         ),
-    #         extension_filter='pdf')), 0)
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            display_arguments(args=args_1, message='Parsed')
+            self.assertEqual(
+                captured_output.getvalue(),
+                'Parsed\nyes: False\nno: True\n',
+            )
 
-    # def test_extract_info_from_annotation(self):
-    #     file_path = fe.extract_files_list(
-    #         path=os.path.join(
-    #             os.path.dirname(__file__),
-    #             'data',
-    #         ),
-    #         extension_filter='tse',
-    #     )[0]
+    def test_handle_yes_no(self):
+        """ Test the function handle_yes_no. """
+        # Build a dummy arg paser
+        parser = create_parser()
+        args_0 = parser.parse_args(['--yes'])
+        args_1 = parser.parse_args(['--no'])
+        args_2 = parser.parse_args(['-y'])
+        args_3 = parser.parse_args(['-n'])
+        args_4 = parser.parse_args([])
 
-    #     eeg_signal_labels, eeg_signal, _, _, _, _, _ = fe.exploit_edf(
-    #         filename=file_path + '.edf',
-    #     )
+        # Capture sys.stdout, etc.
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            handle_yes_no(args=args_0)  # --yes
+            self.assertEqual(captured_output.getvalue(), '\n')
 
-    #     # Extract the information from a .lbl file
-    #     channels = fe.extract_info_from_annotation(
-    #         filename=file_path + '.lbl',
-    #         signal_base=eeg_signal,
-    #         label_names=eeg_signal_labels,
-    #     )
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            with self.assertRaises(SystemExit) as cm:
+                handle_yes_no(args=args_1)  # --no
+            self.assertEqual(cm.exception.code, None)
+            self.assertEqual(captured_output.getvalue(), '')
 
-    #     self.assertEqual(channels.shape, (8000, 22))
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            handle_yes_no(args=args_2)  # -y
+            self.assertEqual(captured_output.getvalue(), '\n')
 
-    # def test_extract_features(self):
-    #     file_path = fe.extract_files_list(
-    #         path=os.path.join(
-    #             os.path.dirname(__file__),
-    #             'data',
-    #         ),
-    #         extension_filter='tse',
-    #     )[0]
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            with self.assertRaises(SystemExit) as cm:
+                handle_yes_no(args=args_3)  # -n
+            self.assertEqual(cm.exception.code, None)
+            self.assertEqual(captured_output.getvalue(), '')
 
-    #     eeg_signal_labels, eeg_signal, _, _, _, _, _ = fe.exploit_edf(
-    #         filename=file_path + '.edf',
-    #     )
+        test_no = ('n', 'N', 'no', 'No', 'NO', 'nO')
+        for no in test_no:
+            with patch('sys.stdout', new=io.StringIO()) as captured_output:
+                with patch('builtins.input', return_value=no):
+                    with self.assertRaises(SystemExit) as cm:
+                        handle_yes_no(args=args_4)
+                    self.assertEqual(cm.exception.code, None)
+                self.assertEqual(captured_output.getvalue(), '\n')
 
-    #     # Extract the information from a .lbl file
-    #     channels = fe.extract_info_from_annotation(
-    #         filename=file_path + '.lbl',
-    #         signal_base=eeg_signal,
-    #         label_names=eeg_signal_labels,
-    #     )
+        test_yes = (
+            'y', 'Y', 'yes', 'Yes', 'YEs', 'yEs', 'yES', 'yeS', 'YeS', 'YES',
+        )
+        for yes in test_yes:
+            with patch('sys.stdout', new=io.StringIO()) as captured_output:
+                with patch('builtins.input', return_value=yes):
+                    handle_yes_no(args=args_4)
+                self.assertEqual(captured_output.getvalue(), '\n')
 
-    #     del channels
+        # User input and 'yes'
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            with patch('builtins.input', side_effect=['Sì', 'sì', '', 'yes']):
+                handle_yes_no(args=args_4)
+            self.assertEqual(captured_output.getvalue(), '\n')
 
-    """
-    def test_isupper_smth(self):
-        self.assertTrue('FOO'.isupper())
-        self.assertFalse('Foo'.isupper())
-
-        self.assertEqual('foo'.upper(), 'FOO')
-
-        # check that s.split fails when the separator is not a string
-        with self.assertRaises(TypeError):
-            s.split(2)
-    """
-
+        # User input and 'no'
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            with patch('builtins.input', side_effect=['Sì', 'sì', '', 'no']):
+                with self.assertRaises(SystemExit) as cm:
+                    handle_yes_no(args=args_4)
+                    self.assertEqual(cm.exception.code, None)
+            self.assertEqual(captured_output.getvalue(), '\n')
+        
+        # Send KeyboardInterrupt
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            with patch('builtins.input', side_effect=KeyboardInterrupt()):
+                with self.assertRaises(SystemExit) as cm:
+                    handle_yes_no(args=args_4)
+                    self.assertEqual(cm.exception.code, None)
+            self.assertEqual(
+                captured_output.getvalue(),
+                '\n\nThe user requested the end of the program '
+                '(KeyboardInterrupt).\n',
+            )
 
 if __name__ == '__main__':
     unittest.main()
