@@ -14,8 +14,10 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from utils import (
     anonymise_eeg,
+    anonymise_eeg_verbose,
     change_field,
     display_arguments,
+    display_fields,
     ensure_path,
     extract_header,
     find_files,
@@ -389,6 +391,129 @@ class TestUtils(unittest.TestCase):
             # with Deltamed's tool.
             self.assertEqual(compare_against_anonymised_with_deltamed, True)
 
+    def test_display_fields(self):
+        """ Test the function display_fields. """
+        path_eeg_r = os.path.join(exe_path(), 'test_data', 'EEG_R.eeg')
+        header_eeg_r = extract_header(path_eeg_r)
+        hashed_expected_header_eeg_r = (
+            '2ed65bfe84f0db86fe36df25d9cf05287986fa8d8146f381a718f3b149213dae'
+        )
+        hashed_header_eeg_r = hashlib.sha256(
+            b''.join(header_eeg_r)
+        ).hexdigest()
+        self.assertEqual(hashed_header_eeg_r, hashed_expected_header_eeg_r)
+
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            display_fields(path_eeg_r)
+        hash_displayed_field = hashlib.sha256(
+            captured_output.getvalue().encode('utf-16'),
+        ).hexdigest()
+
+        # Check what has been displayed
+        self.assertEqual(
+            'bda4c95072d70db81aa3458bcadc195704c4c76ddb1aa8c17e85af3ae34671fb',
+            hash_displayed_field,
+        )
+
+        path_eeg_r_anonymised = os.path.join(
+            exe_path(), 'test_data', 'EEG_R_anonymised.eeg',
+        )
+        header_eeg_r_anonymised = extract_header(path_eeg_r_anonymised)
+        hashed_expected_header_eeg_r_anonymised = (
+            'fde46c624b9401a540ebdd528cbeb524a64286f30ea1720552d1a14e37598e9c'
+        )
+        hashed_header_eeg_r_anonymised = hashlib.sha256(
+            b''.join(header_eeg_r_anonymised)
+        ).hexdigest()
+        self.assertEqual(
+            hashed_header_eeg_r_anonymised,
+            hashed_expected_header_eeg_r_anonymised,
+        )
+
+        with patch('sys.stdout', new=io.StringIO()) as captured_output:
+            display_fields(path_eeg_r_anonymised)
+        hash_displayed_field_anonymised = hashlib.sha256(
+            captured_output.getvalue().encode('utf-16'),
+        ).hexdigest()
+
+        # Check what has been displayed
+        self.assertEqual(
+            '31d909918e9d3f641d0843aa8d11c6200d4bc4bc3abb1f443fe959e90886a0b8',
+            hash_displayed_field_anonymised,
+        )
+
+    def test_anonymise_eeg_verbose(self):
+        """ Test the function anonymise_eeg_verbose. """
+        path_eeg_r = os.path.join(exe_path(), 'test_data', 'EEG_R.eeg')
+        path_eeg_r_anonymised = os.path.join(
+            exe_path(), 'test_data', 'EEG_R_anonymised.eeg',
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            with patch('sys.stdout', new=io.StringIO()) as captured_output:
+                anonymise_eeg_verbose(
+                    path_eeg_r,
+                    os.path.join(tmpdirname, 'EEG_R.eeg'),
+                    verbose=True,
+                )
+            hash_displayed_field = hashlib.sha256(
+                captured_output.getvalue().encode('utf-16'),
+            ).hexdigest()
+
+            compare_against_old = filecmp.cmp(
+                path_eeg_r,
+                os.path.join(tmpdirname, 'EEG_R.eeg'),
+                shallow=False,
+            )
+
+            self.assertEqual(compare_against_old, False)
+
+            compare_against_anonymised_with_deltamed = filecmp.cmp(
+                path_eeg_r_anonymised,
+                os.path.join(tmpdirname, 'EEG_R.eeg'),
+                shallow=False,
+            )
+
+            self.assertEqual(compare_against_anonymised_with_deltamed, True)
+
+        # Check what has been displayed
+        self.assertEqual(
+            'f716a6768926f07bbc6e73f155e52550dd8ece1379e942e486f4e31a47c19d51',
+            hash_displayed_field,
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            with patch('sys.stdout', new=io.StringIO()) as captured_output:
+                anonymise_eeg_verbose(
+                    path_eeg_r_anonymised,
+                    os.path.join(tmpdirname, 'EEG_R_anonymised.eeg'),
+                    verbose=True,
+                )
+            hash_displayed_field_anonymised = hashlib.sha256(
+                captured_output.getvalue().encode('utf-16'),
+            ).hexdigest()
+
+            compare_against_old = filecmp.cmp(
+                path_eeg_r,
+                os.path.join(tmpdirname, 'EEG_R_anonymised.eeg'),
+                shallow=False,
+            )
+
+            self.assertEqual(compare_against_old, False)
+
+            compare_against_anonymised_with_deltamed = filecmp.cmp(
+                path_eeg_r_anonymised,
+                os.path.join(tmpdirname, 'EEG_R_anonymised.eeg'),
+                shallow=False,
+            )
+
+            self.assertEqual(compare_against_anonymised_with_deltamed, True)
+
+        # Check what has been displayed
+        self.assertEqual(
+            '129cbd9a8414b0b0e3a5c4820c9db79d90ab2b9b66eb0e4acc6479bc387513a7',
+            hash_displayed_field_anonymised,
+        )
 
 if __name__ == '__main__':
     unittest.main()

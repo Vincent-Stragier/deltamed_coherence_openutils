@@ -249,7 +249,7 @@ def display_fields(filename: str):
     fields = b''.join(extract_header(filename))
 
     print(
-        'Name: "',
+        'Name:    "',
         fields[314:364].decode('ascii', errors='ignore'),
         '"',
         sep='',
@@ -263,28 +263,28 @@ def display_fields(filename: str):
     )  # 30 characters (Surname)
 
     print(
-        'Date: "',
+        'Date:    "',
         fields[394:404].decode('ascii', errors='ignore'),
         '"',
         sep='',
     )  # 10 characters (Date)
 
     print(
-        'Sex: "',
+        'Sex:     "',
         fields[404:405].decode('ascii', errors='ignore'),
         '"',
         sep='',
     )  # 1 charaters (Sex)
 
     print(
-        'Folder: "',
+        'Folder:  "',
         fields[405:425].decode('ascii', errors='ignore'),
         '"',
         sep='',
     )  # 20 charaters (Folder)
 
     print(
-        'Centre: "',
+        'Centre:  "',
         fields[425:464].decode('ascii', errors='ignore'),
         '"',
         sep='',
@@ -292,10 +292,10 @@ def display_fields(filename: str):
 
     print(
         'Comment: "',
-        fields[464:719].decode('ascii', errors='ignore'),
+        fields[464:720].decode('ascii', errors='ignore'),
         '"',
         sep='',
-    )  # 255 charaters (Comment)
+    )  # 256 charaters (Comment)
 
 
 def anonymise_eeg_verbose(
