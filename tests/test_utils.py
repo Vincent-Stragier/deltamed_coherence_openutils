@@ -1,8 +1,8 @@
 """ Test the functions of utils.py """
 import argparse
-import io
 import filecmp
 import hashlib
+import io
 import os
 import sys
 import tempfile
@@ -12,7 +12,7 @@ from unittest.mock import patch
 # Add the path of the script to the module
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from utils import (
+from utils import (  # noqa: E402
     anonymise_eeg,
     anonymise_eeg_verbose,
     change_field,
@@ -84,11 +84,11 @@ class TestUtils(unittest.TestCase):
 
                 with open(os.path.join(tmpdirname, file_), 'w') as _:
                     pass
-            
+
             files = [os.path.join(tmpdirname, file_) for file_ in files]
             listed_files = list_files(tmpdirname)
             self.assertEqual(sorted(listed_files), sorted(files))
-    
+
     def test_ensure_path(self):
         """ Test the function ensure_path. """
         with tempfile.TemporaryDirectory() as tmpdirname:
@@ -112,7 +112,7 @@ class TestUtils(unittest.TestCase):
             # Folder and subfolder should exist
             self.assertEqual(os.path.exists(subfolder_path), True)
             self.assertEqual(os.path.exists(folder_path), True)
-    
+
     def test_find_files(self):
         """ Test the function find_files. """
         files = [
@@ -126,25 +126,33 @@ class TestUtils(unittest.TestCase):
             os.path.join('folder_1', 'subfolder_1', 'file_1'),
         ]
 
-        sources_0 = {'folder_0' : files[:4], 'folder_1' : files[4:],}
+        sources_0 = {'folder_0': files[:4], 'folder_1': files[4:]}
 
         sources_1 = {
-            'folder_0' : ['1', '2', '3', '4'], 'folder_1' : files[4:],
+            'folder_0': ['1', '2', '3', '4'], 'folder_1': files[4:],
         }
 
         sources_2 = {
-            'folder_1' : ['1', '2', '3', '4'], 'folder_0' : files[:4],
+            'folder_1': ['1', '2', '3', '4'], 'folder_0': files[:4],
         }
 
         sources_3 = {
-            'folder_1' : ['1', '2', '3', '4'],
-            'folder_0' : ['1', '2', '3', '4'],
+            'folder_1': ['1', '2', '3', '4'],
+            'folder_0': ['1', '2', '3', '4'],
         }
 
-        self.assertEqual(find_files(basename_prefix='file', sources=sources_0), files[:4])
-        self.assertEqual(find_files(basename_prefix='file', sources=sources_1), files[4:])
-        self.assertEqual(find_files(basename_prefix='file', sources=sources_2), files[:4])
-        self.assertEqual(find_files(basename_prefix='file', sources=sources_3), [])
+        self.assertEqual(
+            find_files(basename_prefix='file', sources=sources_0), files[:4],
+        )
+        self.assertEqual(
+            find_files(basename_prefix='file', sources=sources_1), files[4:],
+        )
+        self.assertEqual(
+            find_files(basename_prefix='file', sources=sources_2), files[:4],
+        )
+        self.assertEqual(
+            find_files(basename_prefix='file', sources=sources_3), [],
+        )
 
     def test_display_arguments(self):
         """ Test the function display_arguments. """
@@ -262,7 +270,7 @@ class TestUtils(unittest.TestCase):
                     handle_yes_no(args=args_4)
                 self.assertEqual(cm.exception.code, None)
             self.assertEqual(captured_output.getvalue(), '\n')
-        
+
         # Send KeyboardInterrupt
         with patch('sys.stdout', new=io.StringIO()) as captured_output:
             with patch('builtins.input', side_effect=KeyboardInterrupt()):
@@ -287,10 +295,10 @@ class TestUtils(unittest.TestCase):
     def test_resource_path(self):
         """ Test the function resource_path. """
         # Will return the absolute path to utils.py folder
-        path = resource_path('') 
+        path = resource_path('')
 
         if hasattr(sys, 'frozen'):  # Probably never during the test.
-            check_path = sys._MEIPASS
+            check_path = sys._MEIPASS  # pylint: disable=E1101
         else:
             check_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -298,7 +306,7 @@ class TestUtils(unittest.TestCase):
             )
 
         self.assertEqual(path, check_path)
-    
+
     def test_extract_header(self):
         """ Test the function extract_header. """
         path_eeg_r = os.path.join(exe_path(), 'test_data', 'EEG_R.eeg')
