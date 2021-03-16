@@ -2,7 +2,7 @@
 This repository contains some tools created to manipulate Deltamed Coherence .eeg data in batch. First, an anonymisation tool has been created, then a wrapper for the Deltamed coh3toEDF converter (coh3 is the version of the `.eeg` format used).
 
 ## Jobs status
-In order to improve the code quality, a linter, some unit tests and a security test are ran over the codebase using some workflows (GitHub Actions). This aim to insure that the code is always working as intended.
+In order to improve the code quality, a linter, some unit tests and a security test are run over the codebase using some workflows (GitHub Actions). This aim to insure that the code is always working as intended.
 
 ### Status of the workflows on the main branch
 ![Lastest released development build](https://github.com/2010019970909/deltamed_coherence_openutils/actions/workflows/release_lastest.yml/badge.svg?branch=main)
