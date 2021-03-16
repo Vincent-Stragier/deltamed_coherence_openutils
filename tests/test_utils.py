@@ -260,7 +260,7 @@ class TestUtils(unittest.TestCase):
             with patch('builtins.input', side_effect=['Sì', 'sì', '', 'no']):
                 with self.assertRaises(SystemExit) as cm:
                     handle_yes_no(args=args_4)
-                    self.assertEqual(cm.exception.code, None)
+                self.assertEqual(cm.exception.code, None)
             self.assertEqual(captured_output.getvalue(), '\n')
         
         # Send KeyboardInterrupt
@@ -268,7 +268,7 @@ class TestUtils(unittest.TestCase):
             with patch('builtins.input', side_effect=KeyboardInterrupt()):
                 with self.assertRaises(SystemExit) as cm:
                     handle_yes_no(args=args_4)
-                    self.assertEqual(cm.exception.code, None)
+                self.assertEqual(cm.exception.code, None)
             self.assertEqual(
                 captured_output.getvalue(),
                 '\n\nThe user requested the end of the program '
@@ -514,6 +514,7 @@ class TestUtils(unittest.TestCase):
             '129cbd9a8414b0b0e3a5c4820c9db79d90ab2b9b66eb0e4acc6479bc387513a7',
             hash_displayed_field_anonymised,
         )
+
 
 if __name__ == '__main__':
     unittest.main()
