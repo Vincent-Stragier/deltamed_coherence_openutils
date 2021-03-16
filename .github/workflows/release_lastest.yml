@@ -27,6 +27,12 @@ jobs:
 
     - name: Install PyInstaller
       run: py -3.8-32 -m pip install --upgrade pyinstaller
+      
+    - name: Install Coverage for Python
+      run: py -3.8-32 -m pip install coverage
+
+    - name: Run unit testing with Coverage
+      run: py -3.8-32 -m coverage run -m unittest discover -s .\tests\ -p 'test_*.py'
 
     - name: Build the first package (EEG anonymiser, anonymiser.exe)
       run: >
@@ -39,7 +45,7 @@ jobs:
         py -3.8-32 -m PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n coh3toEDFbatch
         --icon=./ico/fpms.ico ./coh3toEDF.py
-    
+
     - name: Generate the anonymiser GUI Python script from the .ui file
       run: python .\ui_to_py_converter.py .\anonymiser_gui.ui .\anonymiser_gui.py
 
