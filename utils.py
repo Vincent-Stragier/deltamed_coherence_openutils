@@ -104,7 +104,8 @@ def split_keep_sep(string, separator):
     """
     return reduce(
         lambda acc, elem: acc[:-1] + [acc[-1] + elem] if elem == separator
-        else acc + [elem], re.split('(%s)' % re.escape(separator), string), [])
+        else acc + [elem], re.split('(%s)' % re.escape(separator), string), [],
+    )
 
 
 # PyInstaller related function
@@ -218,7 +219,7 @@ def anonymise_eeg(
         change_field(content, 425, 464, field_centre.encode('ascii'))
 
     if field_comment is not None:
-        change_field(content, 464, 719, field_comment.encode('ascii'))
+        change_field(content, 464, 720, field_comment.encode('ascii'))
 
     ensure_path(path=os.path.dirname(destination_file))
 
@@ -248,7 +249,7 @@ def display_fields(filename: str):
     fields = b''.join(extract_header(filename))
 
     print(
-        'Name: "',
+        'Name:    "',
         fields[314:364].decode('ascii', errors='ignore'),
         '"',
         sep='',
@@ -262,28 +263,28 @@ def display_fields(filename: str):
     )  # 30 characters (Surname)
 
     print(
-        'Date: "',
+        'Date:    "',
         fields[394:404].decode('ascii', errors='ignore'),
         '"',
         sep='',
     )  # 10 characters (Date)
 
     print(
-        'Sex: "',
+        'Sex:     "',
         fields[404:405].decode('ascii', errors='ignore'),
         '"',
         sep='',
     )  # 1 charaters (Sex)
 
     print(
-        'Folder: "',
+        'Folder:  "',
         fields[405:425].decode('ascii', errors='ignore'),
         '"',
         sep='',
     )  # 20 charaters (Folder)
 
     print(
-        'Centre: "',
+        'Centre:  "',
         fields[425:464].decode('ascii', errors='ignore'),
         '"',
         sep='',
@@ -291,10 +292,10 @@ def display_fields(filename: str):
 
     print(
         'Comment: "',
-        fields[464:719].decode('ascii', errors='ignore'),
+        fields[464:720].decode('ascii', errors='ignore'),
         '"',
         sep='',
-    )  # 255 charaters (Comment)
+    )  # 256 charaters (Comment)
 
 
 def anonymise_eeg_verbose(
