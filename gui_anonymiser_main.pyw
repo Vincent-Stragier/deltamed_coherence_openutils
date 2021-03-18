@@ -348,10 +348,19 @@ class MainApp(QMainWindow, Ui_MainWindow):
             if self.destination.text() == '':
                 self.destination.setText(self.path)
 
-            self.files = sorted([
-                eeg for eeg in list_files(folder)
-                if eeg.lower().endswith('.eeg')
-            ], os.path.basename)
+            print(
+                [
+                    eeg for eeg in list_files(folder)
+                    if eeg.lower().endswith('.eeg')
+                ]
+            )
+            self.files = sorted(
+                [
+                    eeg for eeg in list_files(folder)
+                    if eeg.lower().endswith('.eeg')
+                ],
+                key=os.path.basename,
+            )
 
             self.OK.setEnabled(True)
 
