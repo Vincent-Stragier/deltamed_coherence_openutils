@@ -11,6 +11,7 @@ import json
 import multiprocessing as mp
 import os
 import sys
+import traceback
 
 # pylint: disable=E0611
 from PyQt5.QtCore import (
@@ -80,8 +81,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
     """
     progress_changed = pyqtSignal(int)
     progress_text_changed = pyqtSignal(str)
+    progress_style_changed = pyqtSignal(str)
     stateChanged = pyqtSignal(bool)
     okChanged = pyqtSignal(bool)
+    show_qmessagebox_exception = pyqtSignal(dict)
 
     def __init__(self):
         """Constructor or the initialiser."""
@@ -110,6 +113,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.progress_bar.setFormat('IDLE')
         self.progress_bar.setAlignment(Qt.AlignCenter)
         self.progress_text_changed.connect(self.progress_bar.setFormat)
+        self.progress_style_changed.connect(self.progress_bar.setStyleSheet)
+
+        # Configure qmessagebox for exception via signals
+        self.show_qmessagebox_exception.connect(self.show_critical_exception)
 
         # Set the slots
         self.path = ''
@@ -187,6 +194,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
     def _anonymise(self):
         # Enable Cancel and disable the interfaces.
         self.stateChanged.emit(True)
+        self.progress_bar.setStyleSheet('')  # Reset stylesheet to default
 
         name_check = self.name_check.isChecked()
         folder_as_name_check = self.folder_as_name_check.isChecked()
@@ -227,17 +235,34 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 '{0} ({1}/{2})'.format(file_, file_index, n_files)
             )
 
-            anonymise_eeg(
-                file_,
-                file_destination,
-                field_name=name,
-                field_surname=surname,
-                field_birthdate=birthdate,
-                field_sex=sex,
-                field_folder=folder,
-                field_centre=centre,
-                field_comment=comment,
-            )
+            try:
+                anonymise_eeg(
+                    file_,
+                    file_destination,
+                    field_name=name,
+                    field_surname=surname,
+                    field_birthdate=birthdate,
+                    field_sex=sex,
+                    field_folder=folder,
+                    field_centre=centre,
+                    field_comment=comment,
+                )
+            except OSError as exception_message:
+                self.progress_style_changed.emit(
+                    'QProgressBar::chunk {background-color: red;}'
+                )
+
+                self.show_qmessagebox_exception.emit(
+                    {
+                        'title': (
+                            'An OSError occured during '
+                            'the anonymisation process'
+                        ),
+                        'text': 'OSError: {0}'.format(exception_message),
+                        'detailed_text': traceback.format_exc(),
+                    }
+                )
+                break
 
             self.progress_changed.emit(int(file_index * 100 / n_files))
 
@@ -288,6 +313,21 @@ class MainApp(QMainWindow, Ui_MainWindow):
             'Do you want to continue and process the file(s) inplace?'
         )
         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
+        return msg.exec_()
+
+    def show_critical_exception(self, parameters):
+        """Show generic error."""
+        msg = QMessageBox()
+        msg.setWindowTitle(parameters.get('title', 'Unexpected error'))
+        msg.setIcon(QMessageBox.Critical)
+
+        text = parameters.get('text', 'None')
+        detailed_text = parameters.get('detailed_text', 'None')
+        if detailed_text is not None:
+            msg.setText(text)
+        if detailed_text is not None:
+            msg.setDetailedText(detailed_text)
+        msg.setStandardButtons(QMessageBox.Ok)
         return msg.exec_()
 
     def select_files_browser(self):
@@ -348,12 +388,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
             if self.destination.text() == '':
                 self.destination.setText(self.path)
 
-            print(
-                [
-                    eeg for eeg in list_files(folder)
-                    if eeg.lower().endswith('.eeg')
-                ]
-            )
             self.files = sorted(
                 [
                     eeg for eeg in list_files(folder)
