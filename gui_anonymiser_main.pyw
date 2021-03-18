@@ -321,9 +321,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
         msg.setWindowTitle(parameters.get('title', 'Unexpected error'))
         msg.setIcon(QMessageBox.Critical)
 
-        text = parameters.get('text', 'None')
-        detailed_text = parameters.get('detailed_text', 'None')
-        if detailed_text is not None:
+        text = parameters.get('text', None)
+        detailed_text = parameters.get('detailed_text', None)
+        if text is not None:
             msg.setText(text)
         if detailed_text is not None:
             msg.setDetailedText(detailed_text)
