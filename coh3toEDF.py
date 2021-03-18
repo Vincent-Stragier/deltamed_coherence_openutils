@@ -122,7 +122,6 @@ def main(
         with the same name will be overwrited.
     """
     print('1 - List the files to convert...')
-
     files = [
         os.path.abspath(file_) for file_ in list_files(original_path)
         if os.path.basename(file_).lower().endswith('.eeg')
@@ -164,12 +163,13 @@ def main(
                 executable_path=executable_path,
             )
 
-    print('3 - Kill the converter process(es).')
-    os.system(
-        'taskkill /f /im {0}'.format(
-            os.path.basename(executable_path),
-        ),
-    )
+    if n_files:
+        print('3 - Kill the converter process(es).')
+        os.system(
+            'taskkill /f /im {0}'.format(
+                os.path.basename(executable_path),
+            ),
+        )
 
 
 if __name__ == '__main__':
@@ -260,8 +260,8 @@ if __name__ == '__main__':
             sys.exit(1)
 
     main(
-        path_to_executable,
-        args.path,
-        args.destination_path,
+        original_path=args.path,
+        executable_path=path_to_executable,
+        destination_path=args.destination_path,
         overwrite=args.overwrite,
     )
