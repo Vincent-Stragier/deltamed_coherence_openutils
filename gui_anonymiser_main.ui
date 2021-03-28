@@ -335,14 +335,14 @@
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
-   <widget class="QMenu" name="menuSetup">
+   <widget class="QMenu" name="menuEdit">
     <property name="title">
-     <string>Setup</string>
+     <string>Edit</string>
     </property>
-    <addaction name="actionConfigure_coh3toEDF_exe"/>
+    <addaction name="actionSettings"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuSetup"/>
+   <addaction name="menuEdit"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -366,9 +366,9 @@
     <string>Select file(s)</string>
    </property>
   </action>
-  <action name="actionConfigure_coh3toEDF_exe">
+  <action name="actionSettings">
    <property name="text">
-    <string>Configure coh3toEDF.exe path (Deltamed EEG to EDF)</string>
+    <string>Settings</string>
    </property>
   </action>
  </widget>
