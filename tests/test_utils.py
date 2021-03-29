@@ -312,7 +312,7 @@ class TestUtils(unittest.TestCase):
         path_eeg_r = os.path.join(exe_path(), 'test_data', 'EEG_R.eeg')
         header_eeg_r = extract_header(path_eeg_r)
         hashed_expected_header_eeg_r = (
-            '2ed65bfe84f0db86fe36df25d9cf05287986fa8d8146f381a718f3b149213dae'
+            '0939591668e1bf458fb6de8c7b1d10040439aac4e30b8e05741fd3add35d1a2f'
         )
         hashed_header_eeg_r = hashlib.sha256(
             b''.join(header_eeg_r)
@@ -324,7 +324,7 @@ class TestUtils(unittest.TestCase):
         )
         header_eeg_r_anonymised = extract_header(path_eeg_r_anonymised)
         hashed_expected_header_eeg_r_anonymised = (
-            'fde46c624b9401a540ebdd528cbeb524a64286f30ea1720552d1a14e37598e9c'
+            'f4e5ed9f4606aed4af9b8b5fc65b8f50775df3a5a12916f91b60876aeeb96ae2'
         )
         hashed_header_eeg_r_anonymised = hashlib.sha256(
             b''.join(header_eeg_r_anonymised)
@@ -339,7 +339,7 @@ class TestUtils(unittest.TestCase):
         path_eeg_r = os.path.join(exe_path(), 'test_data', 'EEG_R.eeg')
         header_eeg_r = extract_header(path_eeg_r)
         hashed_expected_header_eeg_r = (
-            '2ed65bfe84f0db86fe36df25d9cf05287986fa8d8146f381a718f3b149213dae'
+            '0939591668e1bf458fb6de8c7b1d10040439aac4e30b8e05741fd3add35d1a2f'
         )
         hashed_header_eeg_r = hashlib.sha256(
             b''.join(header_eeg_r)
@@ -354,7 +354,7 @@ class TestUtils(unittest.TestCase):
         )
         header_eeg_r_anonymised = extract_header(path_eeg_r_anonymised)
         hashed_expected_header_eeg_r_anonymised = (
-            'fde46c624b9401a540ebdd528cbeb524a64286f30ea1720552d1a14e37598e9c'
+            'f4e5ed9f4606aed4af9b8b5fc65b8f50775df3a5a12916f91b60876aeeb96ae2'
         )
         hashed_header_eeg_r_anonymised = hashlib.sha256(
             b''.join(header_eeg_r_anonymised)
@@ -404,7 +404,7 @@ class TestUtils(unittest.TestCase):
         path_eeg_r = os.path.join(exe_path(), 'test_data', 'EEG_R.eeg')
         header_eeg_r = extract_header(path_eeg_r)
         hashed_expected_header_eeg_r = (
-            '2ed65bfe84f0db86fe36df25d9cf05287986fa8d8146f381a718f3b149213dae'
+            '0939591668e1bf458fb6de8c7b1d10040439aac4e30b8e05741fd3add35d1a2f'
         )
         hashed_header_eeg_r = hashlib.sha256(
             b''.join(header_eeg_r)
@@ -428,7 +428,7 @@ class TestUtils(unittest.TestCase):
         )
         header_eeg_r_anonymised = extract_header(path_eeg_r_anonymised)
         hashed_expected_header_eeg_r_anonymised = (
-            'fde46c624b9401a540ebdd528cbeb524a64286f30ea1720552d1a14e37598e9c'
+            'f4e5ed9f4606aed4af9b8b5fc65b8f50775df3a5a12916f91b60876aeeb96ae2'
         )
         hashed_header_eeg_r_anonymised = hashlib.sha256(
             b''.join(header_eeg_r_anonymised)

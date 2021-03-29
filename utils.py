@@ -3,7 +3,11 @@ import os
 import re
 import shutil
 import sys
+import traceback
 from functools import reduce
+
+import pywinauto
+from pywinauto.application import Application
 
 
 # Files and directories related functions
@@ -139,15 +143,10 @@ def extract_header(filename: str):
     header = []
 
     with open(filename, 'rb') as file_:
-        for line in file_:
-            header.extend(line)
-            if len(header) > 719:
-                header = [
-                    char if isinstance(char, bytes) else bytes([char])
-                    for char in header
-                ]
-
-                return header
+        header = [
+            char if isinstance(char, bytes) else bytes([char])
+            for char in file_.read(720)
+        ]
     return header
 
 
@@ -348,6 +347,78 @@ def anonymise_eeg_verbose(
         display_fields(destination_file)
 
     return True
+
+
+# EEG (Deltamed) to EDF related functions
+def convert_coh3_to_edf(
+    executable_path: str,
+    eeg_path: str,
+    edf_path: str = None,
+):
+    """ Convert Coherence 3 (.eeg) to EDF file format.
+
+    Args:
+        executable_path: path to the converter executable.
+        eeg_path: path to the eeg file to convert.
+        edf_path: path to the converted EDF file.
+    """
+    if edf_path is None:
+        edf_path = eeg_path[:-4] + '.EDF'
+
+    overwrite_edf = os.path.isfile(edf_path)
+
+    # Open the executable
+    try:
+        app = Application(backend='uia').start(executable_path)
+        app = Application().connect(title='Source (C:\\EEG2)')
+
+        # Select file in folder
+        app.Dialog.child_window(class_name='ComboBoxEx32').child_window(
+            class_name="Edit",
+        ).set_text(eeg_path)
+        app.Dialog.Ouvrir.click()
+
+        # Start conversion
+        app.TEDFForm.OK.click()
+
+        # Saving path
+        app.Destination.wait('exists ready')
+        app.Destination['ComboBox2'].child_window(
+            class_name='Edit',
+        ).set_text(edf_path)
+
+        # Indicate where to save the file
+        app.Destination.Button1.click()
+
+        # If the file already exist overwrite it.
+        if overwrite_edf:
+            app['Confirmer l’enregistrement'].wait('exists')
+
+            if app['Dialog0'].texts() == ['Confirmer l’enregistrement']:
+                app['Dialog0'].Oui.click()
+
+        # Wait for the process to complete
+        app.wait_for_process_exit(timeout=60)
+
+    # If multiple instances are runing, kill them all
+    except (
+        pywinauto.findwindows.ElementAmbiguousError,
+        pywinauto.findbestmatch.MatchError,
+    ):
+        traceback.print_exc()
+
+        # Only use one instance at a time
+        os.system(
+            'taskkill /f /im {0}'.format(
+                os.path.basename(executable_path),
+            ),
+        )
+        convert_coh3_to_edf(eeg_path, edf_path, executable_path)
+
+    # If the windows if not found, relaunch the program
+    except pywinauto.findwindows.ElementNotFoundError:
+        traceback.print_exc()
+        convert_coh3_to_edf(eeg_path, edf_path, executable_path)
 
 
 if __name__ == '__main__':
