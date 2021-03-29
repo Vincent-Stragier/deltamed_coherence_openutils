@@ -4,11 +4,14 @@
 import json
 import os
 import sys
-import traceback
 
-import pywinauto
-from pywinauto.application import Application
-from utils import display_arguments, ensure_path, handle_yes_no, list_files
+from utils import (
+    convert_coh3_to_edf,
+    display_arguments,
+    ensure_path,
+    handle_yes_no,
+    list_files,
+)
 
 
 def exe_path():
@@ -33,77 +36,6 @@ except FileNotFoundError:
     )
     config = {'path_to_executable': EXECUTABLE_PATH}
     json.dump(config, open(CONFIG_FILE, 'w'))
-
-
-def convert_coh3_to_edf(
-    eeg_path: str,
-    edf_path: str = None,
-    executable_path: str = EXECUTABLE_PATH,
-):
-    """ Convert Coherence 3 (.eeg) to EDF file format.
-
-    Args:
-        eeg_path: path to the eeg file to convert.
-        edf_path: path to the converted EDF file.
-        executable_path: path to the converter executable.
-    """
-    if edf_path is None:
-        edf_path = eeg_path[:-4] + '.EDF'
-
-    overwrite_edf = os.path.isfile(edf_path)
-
-    # Open the executable
-    try:
-        app = Application(backend='uia').start(executable_path)
-        app = Application().connect(title='Source (C:\\EEG2)')
-
-        # Select file in folder
-        app.Dialog.child_window(class_name='ComboBoxEx32').child_window(
-            class_name="Edit",
-        ).set_text(eeg_path)
-        app.Dialog.Ouvrir.click()
-
-        # Start conversion
-        app.TEDFForm.OK.click()
-
-        # Saving path
-        app.Destination.wait('exists ready')
-        app.Destination['ComboBox2'].child_window(
-            class_name='Edit',
-        ).set_text(edf_path)
-
-        # Indicate where to save the file
-        app.Destination.Button1.click()
-
-        # If the file already exist overwrite it.
-        if overwrite_edf:
-            app['Confirmer l’enregistrement'].wait('exists')
-
-            if app['Dialog0'].texts() == ['Confirmer l’enregistrement']:
-                app['Dialog0'].Oui.click()
-
-        # Wait for the process to complete
-        app.wait_for_process_exit(timeout=60)
-
-    # If multiple instances are runing, kill them all
-    except (
-        pywinauto.findwindows.ElementAmbiguousError,
-        pywinauto.findbestmatch.MatchError,
-    ):
-        traceback.print_exc()
-
-        # Only use one instance at a time
-        os.system(
-            'taskkill /f /im {0}'.format(
-                os.path.basename(executable_path),
-            ),
-        )
-        convert_coh3_to_edf(eeg_path, edf_path, executable_path)
-
-    # If the windows if not found, relaunch the program
-    except pywinauto.findwindows.ElementNotFoundError:
-        traceback.print_exc()
-        convert_coh3_to_edf(eeg_path, edf_path, executable_path)
 
 
 def main(
@@ -158,9 +90,9 @@ def main(
             if os.path.isfile(file_destination_path):
                 print('File has already been converted (will be overwrited).')
             convert_coh3_to_edf(
+                executable_path=executable_path,
                 eeg_path=file_,
                 edf_path=file_destination_path,
-                executable_path=executable_path,
             )
 
     if n_files:

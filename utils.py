@@ -413,12 +413,12 @@ def convert_coh3_to_edf(
                 os.path.basename(executable_path),
             ),
         )
-        convert_coh3_to_edf(eeg_path, edf_path, executable_path)
+        convert_coh3_to_edf(executable_path, eeg_path, edf_path)
 
     # If the windows if not found, relaunch the program
     except pywinauto.findwindows.ElementNotFoundError:
         traceback.print_exc()
-        convert_coh3_to_edf(eeg_path, edf_path, executable_path)
+        convert_coh3_to_edf(executable_path, eeg_path, edf_path)
 
 
 if __name__ == '__main__':
