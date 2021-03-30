@@ -389,7 +389,7 @@ def convert_coh3_to_edf(
             path = os.path.realpath(
                 os.path.join(tmpdir, 'temp', os.path.basename(eeg_path)),
             )
-            ensure_path(os.path.basename(path))
+            ensure_path(os.path.dirname(path))
             src = r'\\?\{0}'.format(eeg_path)
             dst = r'\\?\{0}'.format(path)
             shutil.copyfile(src, dst)
@@ -460,7 +460,8 @@ def convert_coh3_to_edf(
     finally:
         # Remove temp file and dir if it exits
         if os.path.dirname(path) != '':
-            shutil.rmtree(os.path.dirname(path))
+            if os.path.exists(os.path.dirname(path)):
+                shutil.rmtree(os.path.dirname(path))
 
 
 if __name__ == '__main__':

@@ -94,6 +94,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
     state_changed = pyqtSignal(bool)
     ok_changed = pyqtSignal(bool)
     show_qmessagebox_exception = pyqtSignal(dict)
+    set_wait_cursor = pyqtSignal()  # type(None)
+    set_restore_cursor = pyqtSignal()
 
     def __init__(self):
         """Constructor or the initialiser."""
@@ -126,6 +128,12 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         # Configure qmessagebox for exception via signals
         self.show_qmessagebox_exception.connect(self.show_critical_exception)
+
+        # Change cursor using pyqtSignal
+        self.set_wait_cursor.connect(
+            lambda: QApplication.setOverrideCursor(Qt.WaitCursor),
+        )
+        self.set_restore_cursor.connect(QApplication.restoreOverrideCursor)
 
         # Set the slots
         self.path = ''
@@ -204,16 +212,13 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def main_process(self):
         """ Start a job to run the main process. """
-        if self.destination.text() == self.path:
-            if self.anonymise_check.checkState():
-                result = self.show_overwrite_warning()
-                if result != QMessageBox.Yes:
-                    return
-
+        # Check for overwritting
+        count_overwritten_eeg = 0
+        count_overwritten_edf = 0
+        destination_path = self.destination.text()
         if self.anonymise_check.checkState():
             # Check the destination of the anonymised .eeg are not overwritten.
-            destination_path = self.destination.text()
-            count_anonymes = [
+            count_overwritten_eeg = [
                 os.path.exists(
                     os.path.realpath(
                         os.path.join(
@@ -226,21 +231,46 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     ),
                 ) for file_ in self.files
             ]
-            count_anonymes = count_anonymes.count(True)
+            count_overwritten_eeg = count_overwritten_eeg.count(True)
 
-            self.conversion_origin_path = self.destination.text()
-            if self.convert_check.checkState():
-                # Check that the destination
-                # of the .edf file are not overwritten.
-                pass
-            ## Add anonymisation warning...
+        if self.convert_check.checkState():
+            # Check that the destination
+            # of the .edf file are not overwritten.
+            count_overwritten_edf = [
+                os.path.exists(
+                    os.path.realpath(
+                        os.path.join(
+                            destination_path,
+                            os.path.relpath(
+                                '{0}.edf'.format(file_[:-4]),
+                                self.path,
+                            ),
+                        ),
+                    ),
+                ) for file_ in self.files
+            ]
+            count_overwritten_edf = count_overwritten_edf.count(True)
 
-        else:
-            self.conversion_origin_path = self.path
-            if self.convert_check.checkState():
-                # Check that the destination
-                # of the .edf file are not overwritten.
-                pass
+        if count_overwritten_eeg or count_overwritten_edf:
+            message = 'You are going to overwrite '
+            if count_overwritten_eeg:
+                message += '{0} .eeg file(s)'.format(count_overwritten_eeg)
+                if count_overwritten_edf:
+                    message += ' and {0} .edf file(s).'.format(
+                        count_overwritten_edf,
+                    )
+                else:
+                    message += '.'
+            elif count_overwritten_edf:
+                message += '{0} .edf file(s).'.format(
+                    count_overwritten_edf,
+                )
+
+            # if self.destination.text() == self.path:
+            #     if self.anonymise_check.checkState():
+            #         result =
+            if self.show_overwrite_warning(message=message) != QMessageBox.Yes:
+                return
 
         worker = Worker(self._main_process)
         self.threadpool.start(worker)
@@ -436,15 +466,15 @@ class MainApp(QMainWindow, Ui_MainWindow):
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
 
-    def show_overwrite_warning(self):
+    def show_overwrite_warning(self, message):
         """Show the overwrite warning."""
         msg = QMessageBox()
         msg.setWindowTitle('Overwriting Warning')
         msg.setIcon(QMessageBox.Warning)
         msg.setText(
-            'The source path and the destination path are the same. '
-            'You are going to overwrite the file(s).\n\n'
-            'Do you want to continue and process the file(s) inplace?'
+            '{0}\n\nDo you want to continue and overwrite the file(s)?'.format(
+                message,
+            ),
         )
         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
         return msg.exec_()
@@ -519,7 +549,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def validate_folder_contains_edf(self, folder):
         """Check that the folder contains .eeg files."""
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        self.set_wait_cursor.emit()
         self.files = sorted(
             [
                 os.path.realpath(eeg) for eeg in list_files(folder)
@@ -542,9 +572,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
                 self.destination.setText(self.path)
 
             self.OK.setEnabled(True)
-            QApplication.restoreOverrideCursor()
+            self.set_restore_cursor.emit()
         else:
-            QApplication.restoreOverrideCursor()
+            self.set_restore_cursor.emit()
             self.show_qmessagebox_exception.emit(
                 {
                     'title': (
