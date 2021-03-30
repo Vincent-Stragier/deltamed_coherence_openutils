@@ -404,6 +404,12 @@ def convert_coh3_to_edf(
         app.Dialog.Ouvrir.click()
 
         # Start conversion
+        app.TEDFForm.child_window(
+            title="UTF-8", class_name="TGroupButton",
+        ).click()
+        app.TEDFForm.child_window(
+            title="EDF+", class_name="TGroupButton",
+        ).click()
         app.TEDFForm.OK.click()
 
         # Saving path
