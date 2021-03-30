@@ -354,6 +354,7 @@ def convert_coh3_to_edf(
     executable_path: str,
     eeg_path: str,
     edf_path: str = None,
+    deepth: int = 3,
 ):
     """ Convert Coherence 3 (.eeg) to EDF file format.
 
@@ -367,12 +368,36 @@ def convert_coh3_to_edf(
 
     overwrite_edf = os.path.isfile(edf_path)
 
+    char_at_424 = b''
+    with open(eeg_path, 'rb') as file_:
+        file_.seek(424)
+        char_at_424 = file_.read(1)
+
     # Open the executable
+    path = ''
     try:
         app = Application(backend='uia').start(executable_path)
         app = Application().connect(title='Source (C:\\EEG2)')
 
         # Select file in folder
+        if char_at_424 != b'\x00':
+            if hasattr(sys, 'frozen'):
+                tmpdir = os.path.dirname(os.path.abspath(sys.executable))
+            else:
+                tmpdir = os.path.dirname(os.path.abspath(__file__))
+
+            path = os.path.realpath(
+                os.path.join(tmpdir, 'temp', os.path.basename(eeg_path)),
+            )
+            ensure_path(os.path.basename(path))
+            src = r'\\?\{0}'.format(eeg_path)
+            dst = r'\\?\{0}'.format(path)
+            shutil.copyfile(src, dst)
+            eeg_path = path
+            with open(eeg_path, 'rb+') as file_:
+                file_.seek(424)
+                file_.write(b'\x00')
+
         app.Dialog.child_window(class_name='ComboBoxEx32').child_window(
             class_name="Edit",
         ).set_text(eeg_path)
@@ -413,12 +438,23 @@ def convert_coh3_to_edf(
                 os.path.basename(executable_path),
             ),
         )
-        convert_coh3_to_edf(executable_path, eeg_path, edf_path)
+        if deepth:
+            convert_coh3_to_edf(
+                executable_path, eeg_path, edf_path, deepth-1,
+            )
 
     # If the windows if not found, relaunch the program
     except pywinauto.findwindows.ElementNotFoundError:
         traceback.print_exc()
-        convert_coh3_to_edf(executable_path, eeg_path, edf_path)
+        if deepth:
+            convert_coh3_to_edf(
+                executable_path, eeg_path, edf_path, deepth-1,
+            )
+
+    finally:
+        # Remove temp file and dir if it exits
+        if os.path.dirname(path) != '':
+            shutil.rmtree(os.path.dirname(path))
 
 
 if __name__ == '__main__':
