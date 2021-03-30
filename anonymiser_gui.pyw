@@ -205,9 +205,42 @@ class MainApp(QMainWindow, Ui_MainWindow):
     def main_process(self):
         """ Start a job to run the main process. """
         if self.destination.text() == self.path:
-            result = self.show_overwrite_warning()
-            if result != QMessageBox.Yes:
-                return
+            if self.anonymise_check.checkState():
+                result = self.show_overwrite_warning()
+                if result != QMessageBox.Yes:
+                    return
+
+        if self.anonymise_check.checkState():
+            # Check the destination of the anonymised .eeg are not overwritten.
+            destination_path = self.destination.text()
+            count_anonymes = [
+                os.path.exists(
+                    os.path.realpath(
+                        os.path.join(
+                            destination_path,
+                            os.path.relpath(
+                                file_,
+                                self.path,
+                            ),
+                        ),
+                    ),
+                ) for file_ in self.files
+            ]
+            count_anonymes = count_anonymes.count(True)
+
+            self.conversion_origin_path = self.destination.text()
+            if self.convert_check.checkState():
+                # Check that the destination
+                # of the .edf file are not overwritten.
+                pass
+            ## Add anonymisation warning...
+
+        else:
+            self.conversion_origin_path = self.path
+            if self.convert_check.checkState():
+                # Check that the destination
+                # of the .edf file are not overwritten.
+                pass
 
         worker = Worker(self._main_process)
         self.threadpool.start(worker)
@@ -233,7 +266,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.state_changed.emit(False)
 
     def anonymise(self):
-        # if self.
         name_check = self.name_check.isChecked()
         folder_as_name_check = self.folder_as_name_check.isChecked()
 
@@ -393,9 +425,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
         msg = QMessageBox()
         msg.setWindowTitle('About')
         msg.setText(
-            'This program has been programmed by Vincent Stragier.\n\n'
+            'This program has been made by Vincent Stragier.\n\n'
             'It has been created to anonymise .eeg (coh3) '
-            'files from Deltamed (a Natus company).\n\n'
+            'files from Deltamed (a Natus company) and to convert them to .edf'
+            ' (European Data Format).\n\n'
             'The program (PyQt5 GUI) is under a GNU GPL and its '
             'source code is in part under a '
             'Creative Commons licence.'
@@ -447,6 +480,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         dialog.setViewMode(QFileDialog.Detail)
 
         if dialog.exec_() == QFileDialog.Accepted:
+            self.OK.setEnabled(False)
             self.files = [
                 os.path.realpath(file_) for file_ in dialog.selectedFiles()
             ]
@@ -477,44 +511,54 @@ class MainApp(QMainWindow, Ui_MainWindow):
         dialog.setViewMode(QFileDialog.Detail)
 
         if dialog.exec_() == QFileDialog.Accepted:
+            self.source_list_model.clear()
+            self.OK.setEnabled(False)
             folder = dialog.selectedFiles()[0]
+            worker = Worker(self.validate_folder_contains_edf, folder)
+            self.threadpool.start(worker)
 
-            self.files = sorted(
-                [
-                    os.path.realpath(eeg) for eeg in list_files(folder)
-                    if eeg.lower().endswith('.eeg')
-                ],
-                key=os.path.basename,
+    def validate_folder_contains_edf(self, folder):
+        """Check that the folder contains .eeg files."""
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        self.files = sorted(
+            [
+                os.path.realpath(eeg) for eeg in list_files(folder)
+                if eeg.lower().endswith('.eeg')
+            ],
+            key=os.path.basename,
+        )
+
+        if self.files:
+            self.source_list_model.clear()
+            item = QStandardItem()
+            item.setText(folder)
+            item.setIcon(QIcon(resource_path('ico/folder.svg')))
+            self.source_list_model.appendRow(item)
+
+            self.path = folder
+            self.save_preferences(self.path)
+            self.progress_bar.setValue(0)
+            if self.destination.text() == '':
+                self.destination.setText(self.path)
+
+            self.OK.setEnabled(True)
+            QApplication.restoreOverrideCursor()
+        else:
+            QApplication.restoreOverrideCursor()
+            self.show_qmessagebox_exception.emit(
+                {
+                    'title': (
+                        'No .eeg files detected in the selected folder.'
+                    ),
+                    'text': (
+                        'No .eeg files have been detected in the selected'
+                        ' folder. Please select another folder.'
+                    ),
+                }
             )
 
-            if self.files:
-                self.source_list_model.clear()
-                item = QStandardItem()
-                item.setText(folder)
-                item.setIcon(QIcon(resource_path('ico/folder.svg')))
-                self.source_list_model.appendRow(item)
-
-                self.path = folder
-                self.save_preferences(self.path)
-                self.progress_bar.setValue(0)
-                if self.destination.text() == '':
-                    self.destination.setText(self.path)
-
-                self.OK.setEnabled(True)
-            else:
-                self.show_qmessagebox_exception.emit(
-                    {
-                        'title': (
-                            'No .eeg files detected in the selected folder.'
-                        ),
-                        'text': (
-                            'No .eeg files have been detected in the selected'
-                            ' folder. Please select another folder.'
-                        ),
-                    }
-                )
-
     def show_settings(self):
+        """Show the setting dialog window."""
         dialog = SettingsWindow(self, self.executable_path)
         if dialog.exec_() == dialog.Accepted:
             self.save_preferences(
