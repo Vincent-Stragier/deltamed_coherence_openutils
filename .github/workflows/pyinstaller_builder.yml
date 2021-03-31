@@ -38,14 +38,16 @@ jobs:
         --icon=./ico/fpms.ico ./coh3toEDF.py
     
     - name: Generate the anonymiser GUI Python script from the .ui file
-      run: python .\ui_to_py_converter.py .\anonymiser_gui.ui .\anonymiser_gui.py
+      run: |
+        py -3.8-32 .\ui_to_py_converter.py .\gui_anonymiser_main.ui .\gui_anonymiser_main.py
+        py -3.8-32 .\ui_to_py_converter.py .\gui_anonymiser_settings.ui .\gui_anonymiser_settings.py
 
     - name: Build the third package (EEG anonymiser GUI, EEG_anonymiser.exe)
       run: >
         py -3.8-32 -m PyInstaller -F --workpath ./build --distpath ./
         --specpath ./ --clean -n EEG_anonymiser
         --icon=./ico/fpms_anonymous.ico
-        --add-data './ico/;ico' .\gui_anonymiser_main.pyw
+        --add-data './ico/;ico' .\anonymiser_gui.pyw
 
     - name: Build the fourth package (dataset maker, dataset_maker.exe)
       run: >

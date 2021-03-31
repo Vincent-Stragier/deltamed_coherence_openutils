@@ -130,3 +130,5 @@ dmypy.json
 anonymiser_gui.py
 data/
 *.config
+gui_anonymiser_settings.py
+gui_anonymiser_main.py

@@ -3,7 +3,11 @@ import os
 import re
 import shutil
 import sys
+import traceback
 from functools import reduce
+
+import pywinauto
+from pywinauto.application import Application
 
 
 # Files and directories related functions
@@ -139,15 +143,10 @@ def extract_header(filename: str):
     header = []
 
     with open(filename, 'rb') as file_:
-        for line in file_:
-            header.extend(line)
-            if len(header) > 719:
-                header = [
-                    char if isinstance(char, bytes) else bytes([char])
-                    for char in header
-                ]
-
-                return header
+        header = [
+            char if isinstance(char, bytes) else bytes([char])
+            for char in file_.read(720)
+        ]
     return header
 
 
@@ -348,6 +347,121 @@ def anonymise_eeg_verbose(
         display_fields(destination_file)
 
     return True
+
+
+# EEG (Deltamed) to EDF related functions
+def convert_coh3_to_edf(
+    executable_path: str,
+    eeg_path: str,
+    edf_path: str = None,
+    deepth: int = 3,
+):
+    """ Convert Coherence 3 (.eeg) to EDF file format.
+
+    Args:
+        executable_path: path to the converter executable.
+        eeg_path: path to the eeg file to convert.
+        edf_path: path to the converted EDF file.
+    """
+    if edf_path is None:
+        edf_path = eeg_path[:-4] + '.EDF'
+
+    overwrite_edf = os.path.isfile(edf_path)
+
+    char_at_424 = b''
+    with open(eeg_path, 'rb') as file_:
+        file_.seek(424)
+        char_at_424 = file_.read(1)
+
+    # Open the executable
+    path = ''
+    try:
+        app = Application(backend='uia').start(executable_path)
+        app = Application().connect(title='Source (C:\\EEG2)')
+
+        # Select file in folder
+        if char_at_424 != b'\x00':
+            if hasattr(sys, 'frozen'):
+                tmpdir = os.path.dirname(os.path.abspath(sys.executable))
+            else:
+                tmpdir = os.path.dirname(os.path.abspath(__file__))
+
+            path = os.path.realpath(
+                os.path.join(tmpdir, 'temp', os.path.basename(eeg_path)),
+            )
+            ensure_path(os.path.dirname(path))
+            src = r'\\?\{0}'.format(eeg_path)
+            dst = r'\\?\{0}'.format(path)
+            shutil.copyfile(src, dst)
+            eeg_path = path
+            with open(eeg_path, 'rb+') as file_:
+                file_.seek(424)
+                file_.write(b'\x00')
+
+        app.Dialog.child_window(class_name='ComboBoxEx32').child_window(
+            class_name="Edit",
+        ).set_text(eeg_path)
+        app.Dialog.Ouvrir.click()
+
+        # Start conversion
+        app.TEDFForm.child_window(
+            title="UTF-8", class_name="TGroupButton",
+        ).click()
+        app.TEDFForm.child_window(
+            title="EDF+", class_name="TGroupButton",
+        ).click()
+        app.TEDFForm.OK.click()
+
+        # Saving path
+        app.Destination.wait('exists ready')
+        app.Destination['ComboBox2'].child_window(
+            class_name='Edit',
+        ).set_text(edf_path)
+
+        # Indicate where to save the file
+        app.Destination.Button1.click()
+
+        # If the file already exist overwrite it.
+        if overwrite_edf:
+            app['Confirmer l’enregistrement'].wait('exists')
+
+            if app['Dialog0'].texts() == ['Confirmer l’enregistrement']:
+                app['Dialog0'].Oui.click()
+
+        # Wait for the process to complete
+        app.wait_for_process_exit(timeout=60)
+
+    # If multiple instances are runing, kill them all
+    except (
+        pywinauto.findwindows.ElementAmbiguousError,
+        pywinauto.findbestmatch.MatchError,
+    ):
+        traceback.print_exc()
+
+        # Only use one instance at a time
+        os.system(
+            'taskkill /f /im {0}'.format(
+                os.path.basename(executable_path),
+            ),
+        )
+        if deepth:
+            convert_coh3_to_edf(
+                executable_path, eeg_path, edf_path, deepth-1,
+            )
+
+    # If the windows if not found, relaunch the program
+    except pywinauto.findwindows.ElementNotFoundError:
+        traceback.print_exc()
+        if deepth:
+            convert_coh3_to_edf(
+                executable_path, eeg_path, edf_path, deepth-1,
+            )
+
+    finally:
+        # Remove temp file and dir if it exits
+        if os.path.dirname(path) != '':
+            if os.path.exists(os.path.dirname(path)):
+                shutil.rmtree(os.path.dirname(path))
 
 
 if __name__ == '__main__':
