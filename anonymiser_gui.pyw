@@ -65,6 +65,23 @@ PREFERENCES_PATH = 'preferences.config'
 PREFERENCES_PATH = os.path.join(SCRIPT_PATH, 'data', PREFERENCES_PATH)
 
 
+def validate_executable(filename: str):
+    """ Return true if the file is a valid executable). """
+    valid_hashs = (
+        '859d9c69d9f05f4a79f3dbd64942265ded8632df33cd240e2f03e8b2f2188437',
+        'd74c359cfd7c7c35bc66d16404a4830ee511b43a556bf9260eda4253a0bb8e6d'
+    )
+    # Hash executable and compare it to valid hash
+    import hashlib
+    sha256_hash = hashlib.sha256()
+    with open(filename, 'rb') as file_:
+        for byte_block in iter(lambda: file_.read(4096), b''):
+            sha256_hash.update(byte_block)
+    executable_hash = sha256_hash.hexdigest()
+
+    return executable_hash in valid_hashs
+
+
 # Worker class for the QThread handler
 # https://stackoverflow.com/questions/50855210/how-to-pass-parameters-into-qrunnable-for-pyqt5
 class Worker(QRunnable):  # pylint: disable=too-few-public-methods
@@ -698,6 +715,29 @@ class MainApp(QMainWindow, Ui_MainWindow):
         else:
             self.folder_as_name_check.setEnabled(self.name_check.isChecked())
 
+        # Check conversion executable validity
+        if (
+            os.path.exists(executable_path)
+            and executable_path.lower().endswith('.exe')
+        ):
+            if not validate_executable(executable_path):
+                self.group_conversion.setEnabled(False)
+                self.group_conversion.setTitle(
+                    'Conversion (please edit the settings)',
+                )
+                if self.convert_check.isChecked():
+                    self.convert_check.setChecked(False)
+            else:
+                self.group_conversion.setEnabled(True)
+                self.group_conversion.setTitle('Conversion')
+        else:
+            self.group_conversion.setEnabled(False)
+            self.group_conversion.setTitle(
+                'Conversion (please edit the settings)',
+            )
+            if self.convert_check.isChecked():
+                self.convert_check.setChecked(False)
+
         ensure_path(os.path.dirname(PREFERENCES_PATH))
         json.dump(preferences, open(PREFERENCES_PATH, 'w'))
 
@@ -723,27 +763,14 @@ class SettingsWindow(QDialog):
 
     def accept(self):
         """Overwrite the accept() method, to validate the settings changes."""
-        valid_hashs = (
-            '859d9c69d9f05f4a79f3dbd64942265ded8632df33cd240e2f03e8b2f2188437',
-            'd74c359cfd7c7c35bc66d16404a4830ee511b43a556bf9260eda4253a0bb8e6d'
-        )
-
         if (
             os.path.exists(self.path_to_executable)
             and self.path_to_executable.lower().endswith('.exe')
         ):
-            # Hash executable and compare it to valid hash
-            import hashlib
-            sha256_hash = hashlib.sha256()
-            with open(self.path_to_executable, 'rb') as file_:
-                for byte_block in iter(lambda: file_.read(4096), b''):
-                    sha256_hash.update(byte_block)
-            executable_hash = sha256_hash.hexdigest()
-
-            if executable_hash in valid_hashs:
+            if validate_executable(self.path_to_executable):
                 super().accept()
             else:
-                self.show_error_message_invalid_hash(executable_hash)
+                self.show_error_message_invalid_executable()
 
         else:
             self.show_error_message_invalid_path()
@@ -784,7 +811,7 @@ class SettingsWindow(QDialog):
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
 
-    def show_error_message_invalid_hash(self, exe_hash):
+    def show_error_message_invalid_executable(self):
         """ Show a warning about the executable hash validity. """
         msg = QMessageBox()
         msg.setWindowTitle('Unvalid executable')
