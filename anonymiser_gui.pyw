@@ -723,13 +723,30 @@ class SettingsWindow(QDialog):
 
     def accept(self):
         """Overwrite the accept() method, to validate the settings changes."""
+        valid_hashs = (
+            '859d9c69d9f05f4a79f3dbd64942265ded8632df33cd240e2f03e8b2f2188437',
+            'd74c359cfd7c7c35bc66d16404a4830ee511b43a556bf9260eda4253a0bb8e6d'
+        )
+
         if (
             os.path.exists(self.path_to_executable)
             and self.path_to_executable.lower().endswith('.exe')
         ):
-            super().accept()
+            # Hash executable and compare it to valid hash
+            import hashlib
+            sha256_hash = hashlib.sha256()
+            with open(self.path_to_executable, 'rb') as file_:
+                for byte_block in iter(lambda: file_.read(4096), b''):
+                    sha256_hash.update(byte_block)
+            executable_hash = sha256_hash.hexdigest()
+
+            if executable_hash in valid_hashs:
+                super().accept()
+            else:
+                self.show_error_message_invalid_hash(executable_hash)
+
         else:
-            self.show_error_message()
+            self.show_error_message_invalid_path()
 
     def select_coh3toedf_path(self):
         """Show the the file browser to select the path to coh3toEDF.exe"""
@@ -756,13 +773,24 @@ class SettingsWindow(QDialog):
         """ Update the edited text. """
         self.path_to_executable = self.ui.lineEdit.text()
 
-    def show_error_message(self):
-        """ Show a warning about the range of the parameter. """
+    def show_error_message_invalid_path(self):
+        """ Show a warning about the path validity. """
         msg = QMessageBox()
         msg.setWindowTitle('Unvalid file path')
         msg.setIcon(QMessageBox.Warning)
         msg.setText(
             'Please select an existing .exe file.'
+        )
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
+
+    def show_error_message_invalid_hash(self, exe_hash):
+        """ Show a warning about the executable hash validity. """
+        msg = QMessageBox()
+        msg.setWindowTitle('Unvalid executable')
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText(
+            'Please select the right .exe file ("coh3toEDF.exe").'
         )
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
