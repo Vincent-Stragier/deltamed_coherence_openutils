@@ -192,6 +192,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.folder_as_name_check.stateChanged.connect(self.save_preferences)
         self.anonymise_check.stateChanged.connect(self.save_preferences)
         self.convert_check.stateChanged.connect(self.save_preferences)
+        self.overwrite_edf_check.stateChanged.connect(self.save_preferences)
 
         # List View
         self.source_list_model = QStandardItemModel()
@@ -252,7 +253,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
             ]
             count_overwritten_eeg = count_overwritten_eeg.count(True)
 
-        if self.convert_check.checkState():
+        if (
+            self.convert_check.checkState()
+            and self.overwrite_edf_check.isChecked()
+        ):
             # Check that the destination
             # of the .edf file are not overwritten.
             count_overwritten_edf = [
@@ -438,6 +442,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
                         self.executable_path,
                         file_,
                         file_destination,
+                        self.overwrite_edf_check.isChecked(),
                     )
 
                     # Check that the file has been modified
@@ -596,10 +601,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.source_list_model.clear()
             self.OK.setEnabled(False)
             folder = dialog.selectedFiles()[0]
-            worker = Worker(self.validate_folder_contains_edf, folder)
+            worker = Worker(self.validate_folder_contains_eeg, folder)
             self.threadpool.start(worker)
 
-    def validate_folder_contains_edf(self, folder):
+    def validate_folder_contains_eeg(self, folder):
         """Check that the folder contains .eeg files."""
         self.set_wait_cursor.emit()
         self.files = sorted(
@@ -683,6 +688,9 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.convert_check.setChecked(
                 preferences.get('convert_check', True),
             )
+            self.overwrite_edf_check.setChecked(
+                preferences.get('overwrite_edf_check', False),
+            )
             self.folder_as_name_check.setChecked(
                 preferences.get('folder_as_name_check', False)
             )
@@ -713,6 +721,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             'folder_as_name_check': self.folder_as_name_check.isChecked(),
             'anonymise_check': self.anonymise_check.checkState(),
             'convert_check': self.convert_check.isChecked(),
+            'overwrite_edf_check': self.overwrite_edf_check.isChecked(),
         }
 
         if isinstance(path, str) and os.path.isdir(path):
