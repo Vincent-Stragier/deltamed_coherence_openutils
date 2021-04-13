@@ -354,7 +354,7 @@ def convert_coh3_to_edf(
     executable_path: str,
     eeg_path: str,
     edf_path: str = None,
-    deepth: int = 3,
+    depth: int = 3,
 ):
     """ Convert Coherence 3 (.eeg) to EDF file format.
 
@@ -444,17 +444,17 @@ def convert_coh3_to_edf(
                 os.path.basename(executable_path),
             ),
         )
-        if deepth:
+        if depth:
             convert_coh3_to_edf(
-                executable_path, eeg_path, edf_path, deepth-1,
+                executable_path, eeg_path, edf_path, depth-1,
             )
 
     # If the windows if not found, relaunch the program
     except pywinauto.findwindows.ElementNotFoundError:
         traceback.print_exc()
-        if deepth:
+        if depth:
             convert_coh3_to_edf(
-                executable_path, eeg_path, edf_path, deepth-1,
+                executable_path, eeg_path, edf_path, depth-1,
             )
 
     finally:

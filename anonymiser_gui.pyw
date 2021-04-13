@@ -13,6 +13,7 @@ import os
 import sys
 import traceback
 import warnings
+from time import time
 
 # pylint: disable=E0611
 from PyQt5.QtCore import (
@@ -403,6 +404,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         n_files = len(self.files)
 
         # Process the files
+        not_converted = []  # Should stay empty
         for file_index, file_ in enumerate(self.files, start=1):
 
             # Stop the operation if the cancel flag is set.
@@ -426,11 +428,26 @@ class MainApp(QMainWindow, Ui_MainWindow):
             )
 
             try:
-                convert_coh3_to_edf(
-                    self.executable_path,
-                    file_,
-                    file_destination,
-                )
+                before_time = time()
+                modification_time = 0
+
+                depth = 2
+                while before_time > modification_time and depth:
+                    depth -= 1
+                    convert_coh3_to_edf(
+                        self.executable_path,
+                        file_,
+                        file_destination,
+                    )
+
+                    # Check that the file has been modified
+                    if os.path.exists(file_destination):
+                        modification_time = os.path.getmtime(file_destination)
+
+                # If the conversion failed, add file to the not converted list
+                if not depth:
+                    not_converted.append((file_, file_destination))
+
             except OSError as exception_message:
                 self.progress_style_changed.emit(
                     'QProgressBar::chunk {background-color: red;}'
@@ -452,6 +469,26 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.progress_text_changed.emit(
             '{0} ({1}/{2})'.format('IDLE', file_index, n_files)
         )
+
+        # message
+        # not_converted
+        if not_converted:
+            not_converted = ''.join(
+                'File: {0}, destination: {1}\n'.format(file_, destination)
+                for file_, destination in not_converted
+            )
+
+            self.show_qmessagebox_exception.emit(
+                {
+                    'title': (
+                        'Failed conversion'
+                    ),
+                    'text': (
+                        'One or more files have not be converted to .edf.'
+                    ),
+                    'detailed_text': '\n{0}'.format(not_converted)
+                }
+            )
 
     def cancel(self):
         """ Send a signal to the anonymisation process to stop it. """
@@ -716,27 +753,28 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.folder_as_name_check.setEnabled(self.name_check.isChecked())
 
         # Check conversion executable validity
-        if (
-            os.path.exists(executable_path)
-            and executable_path.lower().endswith('.exe')
-        ):
-            if not validate_executable(executable_path):
+        if executable_path is not None:
+            if (
+                os.path.exists(executable_path)
+                and executable_path.lower().endswith('.exe')
+            ):
+                if not validate_executable(executable_path):
+                    self.group_conversion.setEnabled(False)
+                    self.group_conversion.setTitle(
+                        'Conversion (please edit the settings)',
+                    )
+                    if self.convert_check.isChecked():
+                        self.convert_check.setChecked(False)
+                else:
+                    self.group_conversion.setEnabled(True)
+                    self.group_conversion.setTitle('Conversion')
+            else:
                 self.group_conversion.setEnabled(False)
                 self.group_conversion.setTitle(
                     'Conversion (please edit the settings)',
                 )
                 if self.convert_check.isChecked():
                     self.convert_check.setChecked(False)
-            else:
-                self.group_conversion.setEnabled(True)
-                self.group_conversion.setTitle('Conversion')
-        else:
-            self.group_conversion.setEnabled(False)
-            self.group_conversion.setTitle(
-                'Conversion (please edit the settings)',
-            )
-            if self.convert_check.isChecked():
-                self.convert_check.setChecked(False)
 
         ensure_path(os.path.dirname(PREFERENCES_PATH))
         json.dump(preferences, open(PREFERENCES_PATH, 'w'))
