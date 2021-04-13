@@ -309,6 +309,14 @@
       </item>
      </layout>
     </item>
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Build date: &lt;BUILD_DATE&gt;
+Commit hash: &lt;COMMIT_HASH&gt;</string>
+      </property>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">

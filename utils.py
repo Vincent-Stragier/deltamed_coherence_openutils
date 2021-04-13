@@ -354,7 +354,7 @@ def convert_coh3_to_edf(
     executable_path: str,
     eeg_path: str,
     edf_path: str = None,
-    deepth: int = 3,
+    depth: int = 3,
 ):
     """ Convert Coherence 3 (.eeg) to EDF file format.
 
@@ -392,7 +392,11 @@ def convert_coh3_to_edf(
             ensure_path(os.path.dirname(path))
             src = r'\\?\{0}'.format(eeg_path)
             dst = r'\\?\{0}'.format(path)
-            shutil.copyfile(src, dst)
+            try:
+                shutil.copyfile(src, dst)
+            except OSError:
+                shutil.copyfile(eeg_path, path)
+
             eeg_path = path
             with open(eeg_path, 'rb+') as file_:
                 file_.seek(424)
@@ -401,7 +405,8 @@ def convert_coh3_to_edf(
         app.Dialog.child_window(class_name='ComboBoxEx32').child_window(
             class_name="Edit",
         ).set_text(eeg_path)
-        app.Dialog.Ouvrir.click()
+        # Click on Open
+        app.Dialog.Button.click()
 
         # Start conversion
         app.TEDFForm.child_window(
@@ -410,7 +415,7 @@ def convert_coh3_to_edf(
         app.TEDFForm.child_window(
             title="EDF+", class_name="TGroupButton",
         ).click()
-        app.TEDFForm.OK.click()
+        app.TEDFForm.child_window(title="OK", class_name="TBitBtn").click()
 
         # Saving path
         app.Destination.wait('exists ready')
@@ -419,17 +424,17 @@ def convert_coh3_to_edf(
         ).set_text(edf_path)
 
         # Indicate where to save the file
-        app.Destination.Button1.click()
+        app.Destination['Button1'].click()
 
         # If the file already exist overwrite it.
         if overwrite_edf:
-            app['Confirmer l’enregistrement'].wait('exists')
+            app['Dialog0'].wait('exists')
 
-            if app['Dialog0'].texts() == ['Confirmer l’enregistrement']:
-                app['Dialog0'].Oui.click()
+            if app['Dialog0'].texts()[0].startswith('Confirm'):
+                app['Dialog0'].Button.click()
 
         # Wait for the process to complete
-        app.wait_for_process_exit(timeout=60)
+        app.wait_for_process_exit(timeout=300)
 
     # If multiple instances are runing, kill them all
     except (
@@ -444,17 +449,17 @@ def convert_coh3_to_edf(
                 os.path.basename(executable_path),
             ),
         )
-        if deepth:
+        if depth:
             convert_coh3_to_edf(
-                executable_path, eeg_path, edf_path, deepth-1,
+                executable_path, eeg_path, edf_path, depth-1,
             )
 
     # If the windows if not found, relaunch the program
     except pywinauto.findwindows.ElementNotFoundError:
         traceback.print_exc()
-        if deepth:
+        if depth:
             convert_coh3_to_edf(
-                executable_path, eeg_path, edf_path, deepth-1,
+                executable_path, eeg_path, edf_path, depth-1,
             )
 
     finally:
