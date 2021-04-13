@@ -434,7 +434,7 @@ def convert_coh3_to_edf(
                 app['Dialog0'].Button.click()
 
         # Wait for the process to complete
-        app.wait_for_process_exit(timeout=60)
+        app.wait_for_process_exit(timeout=300)
 
     # If multiple instances are runing, kill them all
     except (
