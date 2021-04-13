@@ -392,7 +392,11 @@ def convert_coh3_to_edf(
             ensure_path(os.path.dirname(path))
             src = r'\\?\{0}'.format(eeg_path)
             dst = r'\\?\{0}'.format(path)
-            shutil.copyfile(src, dst)
+            try:
+                shutil.copyfile(src, dst)
+            except OSError:
+                shutil.copyfile(eeg_path, path)
+
             eeg_path = path
             with open(eeg_path, 'rb+') as file_:
                 file_.seek(424)

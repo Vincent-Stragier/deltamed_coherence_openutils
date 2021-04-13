@@ -233,9 +233,10 @@ class MainApp(QMainWindow, Ui_MainWindow):
         # Check for overwritting
         count_overwritten_eeg = 0
         count_overwritten_edf = 0
-        destination_path = self.destination.text()
+        destination_path = os.path.realpath(self.destination.text())
         if self.anonymise_check.checkState():
             # Check the destination of the anonymised .eeg are not overwritten.
+
             count_overwritten_eeg = [
                 os.path.exists(
                     os.path.realpath(
@@ -243,7 +244,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
                             destination_path,
                             os.path.relpath(
                                 file_,
-                                self.path,
+                                os.path.realpath(self.path),
                             ),
                         ),
                     ),
@@ -261,7 +262,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
                             destination_path,
                             os.path.relpath(
                                 '{0}.edf'.format(file_[:-4]),
-                                self.path,
+                                os.path.realpath(self.path),
                             ),
                         ),
                     ),
@@ -284,9 +285,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     count_overwritten_edf,
                 )
 
-            # if self.destination.text() == self.path:
-            #     if self.anonymise_check.checkState():
-            #         result =
             if self.show_overwrite_warning(message=message) != QMessageBox.Yes:
                 return
 
@@ -314,6 +312,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.state_changed.emit(False)
 
     def anonymise(self):
+        self.progress_changed.emit(0)
         name_check = self.name_check.isChecked()
         folder_as_name_check = self.folder_as_name_check.isChecked()
 
@@ -347,7 +346,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     destination_path,
                     os.path.relpath(
                         file_,
-                        self.path,
+                        os.path.realpath(self.path),
                     ),
                 ),
             )
@@ -400,6 +399,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def convert(self):
         """ Convert .eeg to .EDF files. """
+        self.progress_changed.emit(0)
         destination_path = self.destination.text()
         n_files = len(self.files)
 
@@ -418,7 +418,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     destination_path,
                     os.path.relpath(
                         '{0}.edf'.format(file_[:-4]),
-                        self.conversion_origin_path,
+                        os.path.realpath(self.conversion_origin_path),
                     ),
                 ),
             )
@@ -470,8 +470,6 @@ class MainApp(QMainWindow, Ui_MainWindow):
             '{0} ({1}/{2})'.format('IDLE', file_index, n_files)
         )
 
-        # message
-        # not_converted
         if not_converted:
             not_converted = ''.join(
                 'File: {0}, destination: {1}\n'.format(file_, destination)
