@@ -405,7 +405,8 @@ def convert_coh3_to_edf(
         app.Dialog.child_window(class_name='ComboBoxEx32').child_window(
             class_name="Edit",
         ).set_text(eeg_path)
-        app.Dialog.Ouvrir.click()
+        # Click on Open
+        app.Dialog.Button.click()
 
         # Start conversion
         app.TEDFForm.child_window(
@@ -414,7 +415,7 @@ def convert_coh3_to_edf(
         app.TEDFForm.child_window(
             title="EDF+", class_name="TGroupButton",
         ).click()
-        app.TEDFForm.OK.click()
+        app.TEDFForm.child_window(title="OK", class_name="TBitBtn").click()
 
         # Saving path
         app.Destination.wait('exists ready')
@@ -423,14 +424,14 @@ def convert_coh3_to_edf(
         ).set_text(edf_path)
 
         # Indicate where to save the file
-        app.Destination.Button1.click()
+        app.Destination['Button1'].click()
 
         # If the file already exist overwrite it.
         if overwrite_edf:
-            app['Confirmer l’enregistrement'].wait('exists')
+            app['Dialog0'].wait('exists')
 
-            if app['Dialog0'].texts() == ['Confirmer l’enregistrement']:
-                app['Dialog0'].Oui.click()
+            if app['Dialog0'].texts()[0].startswith('Confirm'):
+                app['Dialog0'].Button.click()
 
         # Wait for the process to complete
         app.wait_for_process_exit(timeout=60)
