@@ -50,6 +50,7 @@ jobs:
       run: |
         py -3.8-32 .\ui_to_py_converter.py .\gui_anonymiser_main.ui .\gui_anonymiser_main.py
         py -3.8-32 .\ui_to_py_converter.py .\gui_anonymiser_settings.ui .\gui_anonymiser_settings.py
+        py -3.8-32 .\generate_build_information.py
 
     - name: Build the third package (EEG anonymiser GUI, EEG_anonymiser.exe)
       run: >
