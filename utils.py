@@ -354,6 +354,7 @@ def convert_coh3_to_edf(
     executable_path: str,
     eeg_path: str,
     edf_path: str = None,
+    overwrite: bool = False,
     depth: int = 3,
 ):
     """ Convert Coherence 3 (.eeg) to EDF file format.
@@ -367,6 +368,8 @@ def convert_coh3_to_edf(
         edf_path = eeg_path[:-4] + '.EDF'
 
     overwrite_edf = os.path.isfile(edf_path)
+    if not overwrite and overwrite_edf:
+        return
 
     char_at_424 = b''
     with open(eeg_path, 'rb') as file_:
@@ -429,7 +432,6 @@ def convert_coh3_to_edf(
         # If the file already exist overwrite it.
         if overwrite_edf:
             app['Dialog0'].wait('exists')
-
             if app['Dialog0'].texts()[0].startswith('Confirm'):
                 app['Dialog0'].Button.click()
 
@@ -451,7 +453,7 @@ def convert_coh3_to_edf(
         )
         if depth:
             convert_coh3_to_edf(
-                executable_path, eeg_path, edf_path, depth-1,
+                executable_path, eeg_path, edf_path, overwrite, depth-1,
             )
 
     # If the windows if not found, relaunch the program
@@ -459,7 +461,7 @@ def convert_coh3_to_edf(
         traceback.print_exc()
         if depth:
             convert_coh3_to_edf(
-                executable_path, eeg_path, edf_path, depth-1,
+                executable_path, eeg_path, edf_path, overwrite, depth-1,
             )
 
     finally:
