@@ -33,14 +33,21 @@ if __name__ == '__main__':
         content = open(GUI_GENERIC_CODE, 'r').read()
 
         # Substitute the placeholders
-        content = re.sub(
+        content_modified = re.sub(
             r"<(\w+?)>",
             lambda match: parameter_values_dict[match.group(1)],
             content,
         )
 
         # Overwrite the GUI ui script
-        open(GUI_GENERIC_CODE, 'w').write(content)
+        open(GUI_GENERIC_CODE, 'w').write(content_modified)
+        if content_modified != content:
+            print('{0}:'.format(__file__), 'Build version has been written.')
+        else:
+            print(
+                '{0}:'.format(__file__), 'The content has not been modified.'
+            )
+            exit(2)
 
     else:
         exit(1)
