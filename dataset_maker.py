@@ -162,7 +162,7 @@ def main(
                                 dest for dest
                                 in patient_info['destination_paths']
                                 if isinstance(
-                                    patient_info['destination_paths']
+                                    patient_info['destination_paths'], str
                                 )
                             ][-1]
                         except IndexError:
