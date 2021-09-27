@@ -173,8 +173,8 @@ def change_field(
 
 
 def anonymise_eeg(
-    original_file: typing.Optional[str],
-    destination_file: typing.Optional[str],
+    original_file: str,
+    destination_file: str,
     field_name: typing.Optional[str] = '',
     field_surname: typing.Optional[str] = '',
     field_birthdate: typing.Optional[str] = '',
