@@ -5,7 +5,6 @@ import shutil
 import sys
 import traceback
 from functools import reduce
-from typing import List
 
 import pywinauto
 from pywinauto.application import Application
