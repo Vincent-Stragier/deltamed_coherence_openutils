@@ -4,6 +4,7 @@ import re
 import shutil
 import sys
 import traceback
+import typing
 from functools import reduce
 
 import pywinauto
@@ -172,15 +173,15 @@ def change_field(
 
 
 def anonymise_eeg(
-    original_file: str,
-    destination_file: str,
-    field_name: str = '',
-    field_surname: str = '',
-    field_birthdate: str = '',
-    field_sex: str = '',
-    field_folder: str = '',
-    field_centre: str = '',
-    field_comment: str = ''
+    original_file: typing.Optional[str],
+    destination_file: typing.Optional[str],
+    field_name: typing.Optional[str] = '',
+    field_surname: typing.Optional[str] = '',
+    field_birthdate: typing.Optional[str] = '',
+    field_sex: typing.Optional[str] = '',
+    field_folder: typing.Optional[str] = '',
+    field_centre: typing.Optional[str] = '',
+    field_comment: typing.Optional[str] = ''
 ):
     """Anonymise an .eeg file.
 
