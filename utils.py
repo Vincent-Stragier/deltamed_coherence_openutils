@@ -5,6 +5,7 @@ import shutil
 import sys
 import traceback
 from functools import reduce
+from typing import List
 
 import pywinauto
 from pywinauto.application import Application
@@ -151,7 +152,7 @@ def extract_header(filename: str):
 
 
 def change_field(
-    array, start: int, stop: int, content: list, filler: bytes = b'\x00',
+    array, start: int, stop: int, content: list, filler: List[bytes] = b'\x00',
 ):
     """ Change the content of a .eeg file field in memory.
 
