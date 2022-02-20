@@ -16,7 +16,7 @@ import warnings
 from time import time
 
 # pylint: disable=E0611
-from PyQt5.QtCore import (
+from PyQt6.QtCore import (
     pyqtSlot,
     Qt,
     QUrl,
@@ -24,13 +24,13 @@ from PyQt5.QtCore import (
     QThreadPool,
     QRunnable,
 )
-from PyQt5.QtGui import (
+from PyQt6.QtGui import (
     QDesktopServices,
     QStandardItemModel,
     QIcon,
     QStandardItem,
 )
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QDialog,
@@ -52,6 +52,16 @@ from utils import (  # noqa E402
     list_files,
     resource_path,
 )
+
+
+check_state_converter = {
+    Qt.CheckState.Unchecked: 0,
+    Qt.CheckState.PartiallyChecked: 1,
+    Qt.CheckState.Checked: 2,
+    0: Qt.CheckState.Unchecked,
+    1: Qt.CheckState.PartiallyChecked,
+    2: Qt.CheckState.Checked
+}
 
 
 def exe_path():
@@ -84,7 +94,7 @@ def validate_executable(filename: str):
 
 
 # Worker class for the QThread handler
-# https://stackoverflow.com/questions/50855210/how-to-pass-parameters-into-qrunnable-for-pyqt5
+# https://stackoverflow.com/questions/50855210/how-to-pass-parameters-into-qrunnable-for-PyQt6
 class Worker(QRunnable):  # pylint: disable=too-few-public-methods
     """Worker class to run a function in a QThread."""
 
@@ -140,7 +150,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.progress_bar.setValue(0)
         self.progress_changed.connect(self.progress_bar.setValue)
         self.progress_bar.setFormat('IDLE')
-        self.progress_bar.setAlignment(Qt.AlignCenter)
+        self.progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.progress_text_changed.connect(self.progress_bar.setFormat)
         self.progress_style_changed.connect(self.progress_bar.setStyleSheet)
 
@@ -149,7 +159,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
         # Change cursor using pyqtSignal
         self.set_wait_cursor.connect(
-            lambda: QApplication.setOverrideCursor(Qt.WaitCursor),
+            lambda: QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor),
         )
         self.set_restore_cursor.connect(QApplication.restoreOverrideCursor)
 
@@ -197,7 +207,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
         # List View
         self.source_list_model = QStandardItemModel()
         self.source.setModel(self.source_list_model)
-        self.source.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.source.setEditTriggers(
+            QAbstractItemView.EditTrigger.NoEditTriggers)
 
         # Create a QThread to avoid to hang the main process
         self.threadpool = QThreadPool()
@@ -235,7 +246,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         count_overwritten_eeg = 0
         count_overwritten_edf = 0
         destination_path = os.path.realpath(self.destination.text())
-        if self.anonymise_check.checkState():
+        if self.anonymise_check.checkState() != check_state_converter[0]:
             # Check the destination of the anonymised .eeg are not overwritten.
 
             count_overwritten_eeg = [
@@ -254,7 +265,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
             count_overwritten_eeg = count_overwritten_eeg.count(True)
 
         if (
-            self.convert_check.checkState()
+            self.convert_check.checkState() != check_state_converter[0]
             and self.overwrite_edf_check.isChecked()
         ):
             # Check that the destination
@@ -265,7 +276,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
                         os.path.join(
                             destination_path,
                             os.path.relpath(
-                                '{0}.edf'.format(file_[:-4]),
+                                f'{file_[:-4]}.edf',
                                 os.path.realpath(self.path),
                             ),
                         ),
@@ -289,7 +300,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
                     count_overwritten_edf,
                 )
 
-            if self.show_overwrite_warning(message=message) != QMessageBox.Yes:
+            if (self.show_overwrite_warning(message=message) !=
+                    QMessageBox.StandardButton.Yes):
                 return
 
         worker = Worker(self._main_process)
@@ -300,7 +312,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         self.state_changed.emit(True)
         self.progress_bar.setStyleSheet('')  # Reset stylesheet to default
 
-        if self.anonymise_check.checkState():
+        if self.anonymise_check.checkState() != check_state_converter[0]:
             # Only anonymise if all is anonymise
             # or the some fields are selected.
             self.anonymise()
@@ -309,7 +321,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         else:
             self.conversion_origin_path = self.path
 
-        if self.convert_check.checkState():
+        if self.convert_check.checkState() != check_state_converter[0]:
             self.convert()
 
         # Disable Cancel and enable the interfaces.
@@ -320,7 +332,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
         name_check = self.name_check.isChecked()
         folder_as_name_check = self.folder_as_name_check.isChecked()
 
-        anonymise_ = self.anonymise_check.checkState() == 2
+        anonymise_ = self.anonymise_check.checkState() == check_state_converter[2]
         name = '' if name_check or anonymise_ else None
         surname = '' if self.surname_check.isChecked() or anonymise_ else None
         birthdate = (
@@ -516,31 +528,31 @@ class MainApp(QMainWindow, Ui_MainWindow):
             'It has been created to anonymise .eeg (coh3) '
             'files from Deltamed (a Natus company) and to convert them to .edf'
             ' (European Data Format).\n\n'
-            'The program (PyQt5 GUI) is under a GNU GPL and its '
+            'The program (PyQt6 GUI) is under a GNU GPL and its '
             'source code is in part under a '
             'Creative Commons licence.'
         )
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg.exec()
 
     def show_overwrite_warning(self, message):
         """Show the overwrite warning."""
         msg = QMessageBox()
         msg.setWindowTitle('Overwriting Warning')
-        msg.setIcon(QMessageBox.Warning)
+        msg.setIcon(QMessageBox.Icon.Warning)
         msg.setText(
-            '{0}\n\nDo you want to continue and overwrite the file(s)?'.format(
-                message,
-            ),
+            f'{message}\n\nDo you want to continue and overwrite the file(s)?'
         )
-        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.Cancel)
-        return msg.exec_()
+        msg.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel
+        )
+        return msg.exec()
 
     def show_critical_exception(self, parameters):
         """Show generic error."""
         msg = QMessageBox()
         msg.setWindowTitle(parameters.get('title', 'Unexpected error'))
-        msg.setIcon(QMessageBox.Critical)
+        msg.setIcon(QMessageBox.Icon.Critical)
 
         text = parameters.get('text', None)
         detailed_text = parameters.get('detailed_text', None)
@@ -548,25 +560,25 @@ class MainApp(QMainWindow, Ui_MainWindow):
             msg.setText(text)
         if detailed_text is not None:
             msg.setDetailedText(detailed_text)
-        msg.setStandardButtons(QMessageBox.Ok)
-        return msg.exec_()
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        return msg.exec()
 
     def select_files_browser(self):
         """Show the files browser."""
         dialog = QFileDialog(self)
-        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
         dialog.setDirectory(self.path)
-        dialog.setFileMode(QFileDialog.ExistingFiles)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFiles)
         # Filetype:
         # http://justsolve.archiveteam.org/wiki/NII
         # https://stackoverflow.com/a/27994762
         filters = ["Deltamed EEG files (*.eeg)", "All Files (*)"]
         dialog.setNameFilters(filters)
         dialog.selectNameFilter(filters[0])
-        dialog.setOption(QFileDialog.ShowDirsOnly, False)
-        dialog.setViewMode(QFileDialog.Detail)
+        dialog.setOption(QFileDialog.Option.ShowDirsOnly, False)
+        dialog.setViewMode(QFileDialog.ViewMode.Detail)
 
-        if dialog.exec_() == QFileDialog.Accepted:
+        if dialog.exec() == QFileDialog.DialogCode.Accepted:
             self.OK.setEnabled(False)
             self.files = [
                 os.path.realpath(file_) for file_ in dialog.selectedFiles()
@@ -592,12 +604,12 @@ class MainApp(QMainWindow, Ui_MainWindow):
     def select_folder_browser(self):
         """Show the files browser."""
         dialog = QFileDialog(self)
-        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
         dialog.setDirectory(self.path)
-        dialog.setFileMode(QFileDialog.Directory)
-        dialog.setViewMode(QFileDialog.Detail)
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
+        dialog.setViewMode(QFileDialog.ViewMode.Detail)
 
-        if dialog.exec_() == QFileDialog.Accepted:
+        if dialog.exec() == QFileDialog.DialogCode.Accepted:
             self.source_list_model.clear()
             self.OK.setEnabled(False)
             folder = dialog.selectedFiles()[0]
@@ -647,7 +659,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
     def show_settings(self):
         """Show the setting dialog window."""
         dialog = SettingsWindow(self, self.executable_path)
-        if dialog.exec_() == dialog.Accepted:
+        if dialog.exec() == dialog.DialogCode.Accepted:
             self.save_preferences(
                 path=self.path, executable_path=dialog.path_to_executable,
             )
@@ -655,11 +667,11 @@ class MainApp(QMainWindow, Ui_MainWindow):
     def select_destination_folder_browser(self):
         """Show the files browser to select the destination."""
         dialog = QFileDialog(self)
-        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
         dialog.setDirectory(self.path)
-        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setFileMode(QFileDialog.FileMode.Directory)
 
-        if dialog.exec_() == QFileDialog.Accepted:
+        if dialog.exec() == QFileDialog.DialogCode.Accepted:
             folder = dialog.selectedFiles()[0]
             self.destination.setText(folder)
 
@@ -681,8 +693,11 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.comment_check.setChecked(
                 preferences.get('comment_check', True),
             )
+
             self.anonymise_check.setCheckState(
-                preferences.get('anonymise_check', True),
+                check_state_converter[
+                    preferences.get('anonymise_check', True)
+                ],
             )
 
             self.convert_check.setChecked(
@@ -719,7 +734,8 @@ class MainApp(QMainWindow, Ui_MainWindow):
             'centre_check': self.centre_check.isChecked(),
             'comment_check': self.comment_check.isChecked(),
             'folder_as_name_check': self.folder_as_name_check.isChecked(),
-            'anonymise_check': self.anonymise_check.checkState(),
+            'anonymise_check': check_state_converter[
+                self.anonymise_check.checkState()],
             'convert_check': self.convert_check.isChecked(),
             'overwrite_edf_check': self.overwrite_edf_check.isChecked(),
         }
@@ -749,12 +765,13 @@ class MainApp(QMainWindow, Ui_MainWindow):
             self.comment_check,
         ):
             checkbox.setEnabled(
-                not self.anonymise_check.checkState() in (0, 2),
+                not self.anonymise_check.checkState()
+                in (check_state_converter[0], check_state_converter[2]),
             )
 
-        if self.anonymise_check.checkState() == 2:
+        if self.anonymise_check.checkState() == check_state_converter[2]:
             self.folder_as_name_check.setEnabled(True)
-        elif self.anonymise_check.checkState() == 0:
+        elif self.anonymise_check.checkState() == check_state_converter[0]:
             self.folder_as_name_check.setEnabled(False)
         else:
             self.folder_as_name_check.setEnabled(self.name_check.isChecked())
@@ -789,6 +806,7 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
 class SettingsWindow(QDialog):
     """Settings dialog."""
+
     def __init__(self, parent=None, path_to_executable=''):
         super().__init__(parent)
         # Create an instance of the GUI
@@ -823,21 +841,21 @@ class SettingsWindow(QDialog):
     def select_coh3toedf_path(self):
         """Show the the file browser to select the path to coh3toEDF.exe"""
         dialog = QFileDialog(self)
-        dialog.setAcceptMode(QFileDialog.AcceptOpen)
+        dialog.setAcceptMode(QFileDialog.AcceptMode.AcceptOpen)
 
         if os.path.isfile(self.path_to_executable):
             dialog.setDirectory(os.path.dirname(self.path_to_executable))
         elif os.path.isdir(self.path_to_executable):
             dialog.setDirectory(self.path_to_executable)
 
-        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
         filters = ["Executable (*.exe)", "All Files (*)"]
         dialog.setNameFilters(filters)
         dialog.selectNameFilter(filters[0])
-        dialog.setOption(QFileDialog.ShowDirsOnly, False)
-        dialog.setViewMode(QFileDialog.Detail)
+        dialog.setOption(QFileDialog.Option.ShowDirsOnly, False)
+        dialog.setViewMode(QFileDialog.ViewMode.Detail)
 
-        if dialog.exec_() == QFileDialog.Accepted:
+        if dialog.exec() == QFileDialog.DialogCode.Accepted:
             self.path_to_executable = dialog.selectedFiles()[0]
             self.ui.lineEdit.setText(self.path_to_executable)
 
@@ -849,23 +867,23 @@ class SettingsWindow(QDialog):
         """ Show a warning about the path validity. """
         msg = QMessageBox()
         msg.setWindowTitle('Unvalid file path')
-        msg.setIcon(QMessageBox.Warning)
+        msg.setIcon(QMessageBox.Icon.Warning)
         msg.setText(
             'Please select an existing .exe file.'
         )
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg.exec()
 
     def show_error_message_invalid_executable(self):
         """ Show a warning about the executable hash validity. """
         msg = QMessageBox()
         msg.setWindowTitle('Unvalid executable')
-        msg.setIcon(QMessageBox.Warning)
+        msg.setIcon(QMessageBox.Icon.Warning)
         msg.setText(
             'Please select the right .exe file ("coh3toEDF.exe").'
         )
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()
+        msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg.exec()
 
 
 if __name__ == '__main__':
@@ -891,4 +909,4 @@ if __name__ == '__main__':
     icon_path = resource_path('ico/fpms_anonymous.ico')
     app.setWindowIcon(QIcon(icon_path))
     MyApplication.setWindowIcon(QIcon(icon_path))
-    sys.exit(app.exec_())  # Execute the app
+    sys.exit(app.exec())  # Execute the app
