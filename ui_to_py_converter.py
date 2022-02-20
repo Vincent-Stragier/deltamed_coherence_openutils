@@ -1,6 +1,6 @@
 # −∗− coding: utf−8 −∗−
-"""PyQt5 uic module convert ui file (XML code) into py file (Python code)"""
-from PyQt5 import uic
+"""PyQt6 uic module convert ui file (XML code) into py file (Python code)"""
+from PyQt6 import uic
 
 if __name__ == '__main__':
     import argparse
