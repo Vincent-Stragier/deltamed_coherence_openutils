@@ -15,6 +15,8 @@ import traceback
 import warnings
 from time import time
 
+import git
+
 # pylint: disable=E0611
 from PyQt6.QtCore import (
     pyqtSlot,
@@ -484,10 +486,13 @@ class MainApp(QMainWindow, Ui_MainWindow):
 
     def open_documentation(self):
         """Open program documentation."""
-        url = QUrl(
-            'https://github.com/2010019970909/'
-            'deltamed_coherence_openutils/wiki/Anonymiser-GUI'
-        )
+        try:
+            from gui_anonymiser_main import REPOSITORY_URL
+            url = QUrl(REPOSITORY_URL)
+        except Exception:
+            url = QUrl('https://github.com/Vincent-Stragier/'
+                       'deltamed_coherence_openutils')
+
         QDesktopServices.openUrl(url)
 
     def show_about(self):

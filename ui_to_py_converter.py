@@ -8,18 +8,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(allow_abbrev=True)
 
     parser.add_argument(
-        'input_file',
-        type=str,
-        help='path to the .ui file to convert to a .py file',
-    )
+        'input_file', type=str,
+        help='path to the .ui file to convert to a .py file')
 
     parser.add_argument(
-        'output_file',
-        type=str,
-        help=(
-            'path to the converted .py file'
-        ),
-    )
+        'output_file', type=str,
+        help='path to the converted .py file')
 
     args = parser.parse_args()
 
