@@ -1,6 +1,6 @@
 GitPython==3.1.27
 pandas==1.4.1
 pandas_stubs==1.2.0.40
-PyQt6==6.2.3
+PyQt6
 pywin32==303
 pywinauto==0.6.8
