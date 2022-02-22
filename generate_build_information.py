@@ -39,7 +39,7 @@ if __name__ == '__main__':
             r"<(\w+?)>",
             lambda match: parameter_values_dict[match.group(1)],
             content)
-        
+
         repository_url = f'REPOSITORY_URL = \'{url}\''
         if repository_url not in content_modified:
             content_modified = f'{content_modified}\n{repository_url}\n'
