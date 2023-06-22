@@ -121,7 +121,7 @@ def resource_path(relative_path: str):
         relative_path: the path to resolve.
 
     Returns:
-        The absolute path to the ressource.
+        The absolute path to the resource.
     """
     base_path = getattr(
         sys,
